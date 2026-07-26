@@ -67,7 +67,7 @@ export default function CompleteProfile() {
     <div className="flex h-full flex-col bg-white px-6 pb-8 pt-12">
       <h1 className="text-2xl font-extrabold text-gray-900">Complete your profile</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Like Carousell — pick a username so others can find and trust you.
+        Pick a username so other traders can find and trust you.
       </p>
 
       <form onSubmit={onSubmit} className="mt-6 flex flex-1 flex-col gap-3">

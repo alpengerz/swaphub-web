@@ -1,0 +1,15 @@
+---
+description: Always deploy UI/copy fixes to the live Vercel site
+alwaysApply: true
+---
+
+# Deploy to live site
+
+When the user asks for app fixes or UI changes for SwapHub:
+
+1. Implement the fix in the repo.
+2. Commit the relevant changes (unless they only asked for a local experiment).
+3. Push to `origin` on the current branch so Vercel can redeploy https://swaphub-web.vercel.app.
+4. Tell the user the live URL after push.
+
+Do not wait for a separate "please push" request for routine product fixes.

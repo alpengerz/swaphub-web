@@ -4,7 +4,7 @@ import { Home, Search, Plus, MessageCircle, User } from "lucide-react";
 const items = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/search", label: "Search", icon: Search },
-  { to: "/messages", label: "Messages", icon: MessageCircle, badge: 3 },
+  { to: "/messages", label: "Messages", icon: MessageCircle },
   { to: "/profile", label: "Profile", icon: User },
 ];
 

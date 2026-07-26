@@ -1,6 +1,6 @@
 # SwapHub
 
-Trade what you have for what you need. A Carousell-style barter marketplace (web + installable PWA) backed by Supabase.
+Trade what you have for what you need. A barter marketplace (web + installable PWA) backed by Supabase.
 
 **Live prototype (static UI):** https://swaphub-web.vercel.app  
 **Repo:** https://github.com/pengmain2023/swaphub-web
@@ -40,7 +40,7 @@ npm run dev
      `http://localhost:5173/verify-email`
 5. **Project Settings → API** → copy Project URL + `anon` key into `.env.local`.
 
-### 3. Registration flow (Carousell-style)
+### 3. Registration flow
 
 1. Welcome → **Get Started** → email/password **or** Continue with Google  
 2. Verify email (if required)  
