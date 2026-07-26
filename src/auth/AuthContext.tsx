@@ -24,7 +24,6 @@ interface AuthContextValue {
     password: string
   ) => Promise<{ needsVerification: boolean }>;
   signInWithEmail: (email: string, password: string) => Promise<Profile | null>;
-  signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
   updateProfile: (patch: Partial<Profile>) => Promise<Profile | null>;
@@ -154,15 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return await loadProfile(data.user.id);
         }
         return null;
-      },
-      async signInWithGoogle() {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
       },
       async resetPassword(email) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {

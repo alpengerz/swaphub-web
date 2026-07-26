@@ -40,8 +40,7 @@ export default function Setup() {
           </code>
         </li>
         <li>
-          In <b>Authentication → Providers</b>, enable Email and (optionally)
-          Google. Add redirect URLs:{" "}
+          In <b>Authentication → Providers</b>, enable Email. Add redirect URLs:{" "}
           <code className="rounded bg-gray-100 px-1 text-xs">
             http://localhost:5173/auth/callback
           </code>{" "}

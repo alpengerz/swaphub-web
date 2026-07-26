@@ -5,7 +5,7 @@ import Button from "../../components/Button";
 import { isProfileComplete, useAuth } from "../../auth/AuthContext";
 
 export default function Login() {
-  const { signInWithEmail, signInWithGoogle, configured } = useAuth();
+  const { signInWithEmail, configured } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? "/home";
@@ -73,21 +73,6 @@ export default function Login() {
           {busy ? "Logging in…" : "Log in"}
         </Button>
       </form>
-
-      <div className="my-5 flex items-center gap-3 text-xs text-gray-400">
-        <div className="h-px flex-1 bg-gray-200" />
-        OR
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-
-      <Button
-        fullWidth
-        variant="outline"
-        disabled={!configured || busy}
-        onClick={() => void signInWithGoogle().catch((err) => setError(err.message))}
-      >
-        Continue with Google
-      </Button>
 
       <p className="mt-6 text-center text-sm text-gray-500">
         New to SwapHub?{" "}
