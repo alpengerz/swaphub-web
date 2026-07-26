@@ -90,7 +90,14 @@ export default function VerifyEmail() {
       await resendVerification(email);
       setMessage("Verification email resent. Check your inbox (and spam).");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not resend.");
+      const msg = err instanceof Error ? err.message : "Could not resend.";
+      if (msg.toLowerCase().includes("rate limit")) {
+        setError(
+          "Email rate limit hit. Wait about an hour before resending, or set up custom SMTP in Supabase."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }

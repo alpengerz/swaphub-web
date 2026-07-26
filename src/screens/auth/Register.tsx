@@ -33,7 +33,14 @@ export default function Register() {
         navigate("/complete-profile");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not sign up.");
+      const msg = err instanceof Error ? err.message : "Could not sign up.";
+      if (msg.toLowerCase().includes("rate limit")) {
+        setError(
+          "Too many confirmation emails were sent recently (Supabase free email limit is very low). Wait about an hour, or connect custom SMTP in Supabase → Authentication → SMTP."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }
