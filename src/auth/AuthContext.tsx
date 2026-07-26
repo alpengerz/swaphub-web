@@ -64,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (session?.user?.id) await loadProfile(session.user.id);
+    if (!isSupabaseConfigured) return;
+    const {
+      data: { session: current },
+    } = await supabase.auth.getSession();
+    const id = current?.user?.id ?? session?.user?.id;
+    if (id) await loadProfile(id);
   }, [loadProfile, session?.user?.id]);
 
   useEffect(() => {
@@ -111,7 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileComplete: isComplete(profile),
       refreshProfile,
       async signUpWithEmail(email, password) {
-        const redirectTo = `${window.location.origin}/verify-email`;
+        // Land on /auth/callback so we can show "Email confirmed" after the link.
+        const redirectTo = `${window.location.origin}/auth/callback`;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -148,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           type: "signup",
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/verify-email`,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
