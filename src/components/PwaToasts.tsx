@@ -26,7 +26,7 @@ export default function PwaToasts() {
   if (!offline && !needRefresh) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4 md:bottom-6">
       {offline && (
         <div className="pointer-events-auto rounded-xl bg-gray-900 px-4 py-2.5 text-center text-xs font-medium text-white shadow-lg">
           You&apos;re offline. Some actions won&apos;t work until you reconnect.

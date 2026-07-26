@@ -153,7 +153,7 @@ export default function PostItem() {
     <div className="flex h-full flex-col bg-gray-50">
       <ScreenHeader title={isEdit ? "Edit listing" : "Post an Item"} />
 
-      <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4">
+      <div className="no-scrollbar mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-4 py-4 md:py-8">
         {loadingEdit ? (
           <p className="text-sm text-gray-500">Loading listing…</p>
         ) : (
@@ -285,7 +285,7 @@ export default function PostItem() {
         )}
       </div>
 
-      <div className="border-t border-gray-100 bg-white p-4">
+      <div className="border-t border-gray-100 bg-white p-4 md:mx-auto md:w-full md:max-w-2xl md:border-0">
         <Button fullWidth disabled={!canPost || busy} onClick={() => void submit()}>
           {busy
             ? isEdit

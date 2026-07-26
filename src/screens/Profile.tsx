@@ -47,8 +47,8 @@ export default function Profile() {
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
-      <header className="relative z-20 flex items-center justify-between gap-3 px-4 pb-2 pt-4">
-        <h1 className="text-lg font-bold text-gray-900">Profile</h1>
+      <header className="relative z-20 flex items-center justify-between gap-3 px-4 pb-2 pt-4 md:mx-auto md:w-full md:max-w-3xl">
+        <h1 className="text-lg font-bold text-gray-900 md:text-2xl">Profile</h1>
         <button
           type="button"
           onClick={() => navigate("/settings")}
@@ -60,7 +60,7 @@ export default function Profile() {
       </header>
 
       <PullToRefresh onRefresh={loadProfileData}>
-        <div className="px-4 pb-4">
+        <div className="mx-auto w-full max-w-3xl px-4 pb-8 md:pt-2">
           <div className="flex flex-col items-center pt-2 text-center">
             <Link
               to="/edit-profile"

@@ -1,53 +1,40 @@
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
+import DesktopTopNav from "./DesktopTopNav";
+import { useIsDesktop } from "../hooks/useMediaQuery";
 
 interface AppShellProps {
   children: ReactNode;
 }
 
-function useStandaloneDisplay() {
-  const [standalone, setStandalone] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(display-mode: standalone)");
-    const iosStandalone =
-      "standalone" in window.navigator &&
-      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-
-    const sync = () => setStandalone(mq.matches || iosStandalone);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  return standalone;
-}
+const NO_DESKTOP_NAV = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/setup",
+  "/verify-email",
+  "/forgot-password",
+  "/auth/callback",
+  "/complete-profile",
+  "/privacy",
+  "/terms",
+]);
 
 /**
- * Responsive shell:
- * - Phone / tablet / installed PWA → full viewport (native-app feel)
- * - Desktop browser → centered app column (no fake phone bezel)
+ * Full-viewport shell.
+ * - Mobile / PWA: edge-to-edge app
+ * - Desktop browser: full-width marketplace (Carousell-style), not a phone frame
  */
 export default function AppShell({ children }: AppShellProps) {
-  const standalone = useStandaloneDisplay();
+  const isDesktop = useIsDesktop();
+  const { pathname } = useLocation();
+  const showDesktopNav = isDesktop && !NO_DESKTOP_NAV.has(pathname);
 
   return (
-    <div
-      className={`min-h-full w-full ${
-        standalone ? "bg-white" : "bg-[#eef1f4] md:flex md:justify-center"
-      }`}
-    >
-      <div
-        className={[
-          "relative mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-white",
-          // Desktop browser only: readable column, website-style (not a phone mock)
-          !standalone
-            ? "md:max-w-[480px] md:shadow-[0_0_0_1px_rgba(16,24,40,0.06),0_20px_50px_-20px_rgba(16,24,40,0.25)]"
-            : "",
-        ].join(" ")}
-      >
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col pt-[env(safe-area-inset-top)]">
-          {children}
-        </div>
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-50">
+      {showDesktopNav && <DesktopTopNav />}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white md:bg-gray-50">
+        {children}
       </div>
     </div>
   );

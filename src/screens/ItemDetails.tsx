@@ -145,9 +145,10 @@ export default function ItemDetails() {
   }
 
   return (
-    <div className="relative flex h-full flex-col bg-white">
-      <div className="no-scrollbar flex-1 overflow-y-auto pb-4">
-        <div className="relative">
+    <div className="relative flex h-full flex-col bg-white md:bg-gray-50">
+      <div className="no-scrollbar flex-1 overflow-y-auto pb-4 md:pb-8">
+        <div className="mx-auto w-full max-w-6xl md:grid md:grid-cols-2 md:gap-10 md:px-6 md:pt-8">
+        <div className="relative md:overflow-hidden md:rounded-2xl md:bg-white md:shadow-card md:ring-1 md:ring-black/5">
           <button
             type="button"
             onClick={() => {
@@ -159,19 +160,19 @@ export default function ItemDetails() {
             <img
               src={images[active] || coverUrl(listing)}
               alt={listing.title}
-              className="h-72 w-full object-cover"
+              className="h-72 w-full object-cover md:h-[28rem]"
             />
           </button>
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+              className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow md:hidden"
               aria-label="Back"
             >
               <ChevronLeftIcon />
             </button>
-            <div className="pointer-events-auto flex gap-2">
+            <div className="pointer-events-auto ml-auto flex gap-2">
               {!isOwner && (
                 <button
                   type="button"
@@ -214,7 +215,7 @@ export default function ItemDetails() {
         </div>
 
         {images.length > 1 && (
-          <div className="flex justify-center gap-2 py-3">
+          <div className="flex justify-center gap-2 py-3 md:col-start-1 md:row-start-2 md:justify-start md:px-0">
             {images.map((_, i) => (
               <button
                 key={i}
@@ -229,8 +230,8 @@ export default function ItemDetails() {
           </div>
         )}
 
-        <div className="px-4">
-          <h1 className="text-xl font-bold text-gray-900">{listing.title}</h1>
+        <div className="px-4 md:col-start-2 md:row-span-2 md:row-start-1 md:rounded-2xl md:bg-white md:p-6 md:shadow-card md:ring-1 md:ring-black/5">
+          <h1 className="text-xl font-bold text-gray-900 md:text-3xl">{listing.title}</h1>
           <div className="mt-1 flex items-center gap-2 text-sm">
             <span className="flex items-center gap-1 font-semibold text-gray-900">
               <Star size={15} className="fill-amber-400 text-amber-400" />
@@ -283,10 +284,48 @@ export default function ItemDetails() {
               </div>
             </div>
           )}
+
+          <div className="mt-6 hidden gap-3 md:flex">
+            {isOwner ? (
+              <>
+                <Button
+                  className="flex-1"
+                  onClick={() => navigate(`/edit/${listing.id}`)}
+                >
+                  Edit listing
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => navigate("/my-listings")}
+                >
+                  My listings
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={busy}
+                  onClick={() => void startChat()}
+                >
+                  Chat
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => navigate(`/offer/${listing.id}`)}
+                >
+                  Make an Offer
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
         </div>
       </div>
 
-      <div className="flex gap-3 border-t border-gray-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="flex gap-3 border-t border-gray-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden">
         {isOwner ? (
           <>
             <Button

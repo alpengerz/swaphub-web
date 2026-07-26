@@ -64,20 +64,25 @@ export default function Messages() {
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
-      <header className="bg-white px-4 pb-3 pt-4">
-        <h1 className="text-lg font-bold text-gray-900">Messages</h1>
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-gray-700">
-          <Search size={18} className="text-gray-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations"
-            className="w-full bg-transparent outline-none placeholder:text-gray-400"
-          />
+      <header className="bg-white px-4 pb-3 pt-4 md:border-b md:border-gray-100">
+        <div className="mx-auto w-full max-w-3xl">
+          <h1 className="text-lg font-bold text-gray-900 md:text-2xl">
+            Messages
+          </h1>
+          <div className="mt-3 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-gray-700 md:rounded-full">
+            <Search size={18} className="text-gray-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search conversations"
+              className="w-full bg-transparent outline-none placeholder:text-gray-400"
+            />
+          </div>
         </div>
       </header>
 
       <PullToRefresh onRefresh={() => loadConversations(false)}>
+        <div className="mx-auto w-full max-w-3xl md:px-0">
         {loading && (
           <p className="p-4 text-sm text-gray-500">Loading conversations…</p>
         )}
@@ -136,6 +141,7 @@ export default function Messages() {
             </button>
           );
         })}
+        </div>
       </PullToRefresh>
 
       <BottomNav />

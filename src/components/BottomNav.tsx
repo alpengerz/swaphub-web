@@ -14,7 +14,7 @@ export default function BottomNav() {
   const { unreadMessages } = useUnread();
 
   return (
-    <nav className="relative z-20 flex items-center justify-around border-t border-gray-100 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-2">
+    <nav className="relative z-20 flex items-center justify-around border-t border-gray-100 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-2 md:hidden">
       {items.slice(0, 2).map((item) => (
         <NavItem key={item.to} {...item} />
       ))}

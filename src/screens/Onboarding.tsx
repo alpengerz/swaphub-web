@@ -71,80 +71,112 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-white px-6 pb-8 pt-14">
-      <div className="flex items-center justify-between">
-        <Logo size={28} />
-        {!last && (
-          <button
-            type="button"
-            onClick={() => navigate(configured ? "/register" : "/setup")}
-            className="text-sm font-semibold text-gray-500"
-          >
-            Skip
-          </button>
-        )}
+    <div className="flex h-full flex-col bg-white md:flex-row">
+      {/* Desktop brand panel */}
+      <div className="relative hidden flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-600 via-brand-500 to-brand-700 px-12 text-white md:flex">
+        <div className="absolute -left-16 top-20 h-64 w-64 rounded-full bg-white/10" />
+        <div className="absolute -right-10 bottom-10 h-80 w-80 rounded-full bg-black/10" />
+        <div className="relative max-w-md">
+          <Logo size={36} light />
+          <h2 className="mt-8 text-4xl font-extrabold leading-tight tracking-tight">
+            The marketplace for fair swaps
+          </h2>
+          <p className="mt-4 text-lg text-white/90">
+            List what you have. Find what you need. Trade without cash — like
+            Carousell, built for barter.
+          </p>
+        </div>
       </div>
 
-      <div
-        className="flex flex-1 flex-col"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="mt-8 text-center">
-          <h1 className="text-3xl font-extrabold leading-tight text-gray-900">
-            {slide.title}
-          </h1>
-          <p className="mt-3 font-medium text-brand-600">{slide.subtitle}</p>
-        </div>
-
-        <div className="my-6 flex flex-1 items-center justify-center">
-          <SlideVisual kind={slide.visual} />
-        </div>
-
-        <div className="flex items-center justify-center gap-2 pb-5">
-          {SLIDES.map((_, i) => (
+      {/* Mobile + desktop content column */}
+      <div className="flex h-full w-full flex-col px-6 pb-8 pt-14 md:max-w-xl md:justify-center md:px-12 md:pt-10">
+        <div className="flex items-center justify-between md:hidden">
+          <Logo size={28} />
+          {!last && (
             <button
-              key={i}
               type="button"
-              aria-label={`Go to slide ${i + 1}`}
-              onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === index ? "w-5 bg-brand-500" : "w-1.5 bg-gray-300"
-              }`}
-            />
-          ))}
+              onClick={() => navigate(configured ? "/register" : "/setup")}
+              className="text-sm font-semibold text-gray-500"
+            >
+              Skip
+            </button>
+          )}
         </div>
-      </div>
 
-      <div className="space-y-3">
-        {!last ? (
-          <Button
-            fullWidth
-            type="button"
-            onClick={goNext}
-            leftIcon={<ChevronRight size={18} />}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            fullWidth
-            type="button"
-            onClick={() => navigate(configured ? "/register" : "/setup")}
-          >
-            Get Started
-          </Button>
-        )}
-        <p className="pt-1 text-center text-sm text-gray-500">
-          Already have an account?{" "}
-          <button
-            type="button"
-            onClick={() => navigate(configured ? "/login" : "/setup")}
-            className="font-semibold text-brand-600"
-          >
-            Log in
-          </button>
-        </p>
+        <div className="mb-6 hidden items-center justify-between md:flex">
+          <p className="text-sm font-semibold text-gray-500">Welcome</p>
+          {!last && (
+            <button
+              type="button"
+              onClick={() => navigate(configured ? "/register" : "/setup")}
+              className="text-sm font-semibold text-gray-500 hover:text-gray-800"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+
+        <div
+          className="flex flex-1 flex-col md:flex-none"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <div className="mt-8 text-center md:mt-0 md:text-left">
+            <h1 className="text-3xl font-extrabold leading-tight text-gray-900 md:text-4xl">
+              {slide.title}
+            </h1>
+            <p className="mt-3 font-medium text-brand-600">{slide.subtitle}</p>
+          </div>
+
+          <div className="my-6 flex flex-1 items-center justify-center md:my-10 md:flex-none">
+            <SlideVisual kind={slide.visual} />
+          </div>
+
+          <div className="flex items-center justify-center gap-2 pb-5 md:justify-start">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Go to slide ${i + 1}`}
+                onClick={() => setIndex(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-5 bg-brand-500" : "w-1.5 bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {!last ? (
+            <Button
+              fullWidth
+              type="button"
+              onClick={goNext}
+              leftIcon={<ChevronRight size={18} />}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              type="button"
+              onClick={() => navigate(configured ? "/register" : "/setup")}
+            >
+              Get Started
+            </Button>
+          )}
+          <p className="pt-1 text-center text-sm text-gray-500 md:text-left">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate(configured ? "/login" : "/setup")}
+              className="font-semibold text-brand-600"
+            >
+              Log in
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
