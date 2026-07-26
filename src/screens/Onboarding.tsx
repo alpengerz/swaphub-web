@@ -2,9 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import Logo from "../components/Logo";
 import Button from "../components/Button";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { signInWithGoogle, configured } = useAuth();
+
   return (
     <div className="flex h-full flex-col bg-white px-6 pb-8 pt-14">
       <div className="flex justify-center">
@@ -42,13 +45,19 @@ export default function Onboarding() {
       </div>
 
       <div className="space-y-3">
-        <Button fullWidth onClick={() => navigate("/home")}>
+        <Button fullWidth onClick={() => navigate(configured ? "/register" : "/setup")}>
           Get Started
         </Button>
         <Button
           fullWidth
           variant="outline"
-          onClick={() => navigate("/home")}
+          onClick={() => {
+            if (!configured) {
+              navigate("/setup");
+              return;
+            }
+            void signInWithGoogle();
+          }}
           leftIcon={<GoogleIcon />}
         >
           Continue with Google
@@ -56,7 +65,7 @@ export default function Onboarding() {
         <p className="pt-2 text-center text-sm text-gray-500">
           Already have an account?{" "}
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => navigate(configured ? "/login" : "/setup")}
             className="font-semibold text-brand-600"
           >
             Log in

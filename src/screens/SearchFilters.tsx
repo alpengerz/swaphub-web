@@ -1,40 +1,64 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, ClipboardList } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Search } from "lucide-react";
 import ScreenHeader from "../components/ScreenHeader";
 import Chip from "../components/Chip";
 import Button from "../components/Button";
-import { categories, conditions, listings } from "../data";
-
-const lookingForOptions = ["All", "Items", "Services", "Skills"];
+import ItemCard from "../components/ItemCard";
+import { categories, conditions } from "../data";
+import { fetchListings } from "../lib/listings";
+import type { ListingWithPhotos } from "../types/database";
 
 export default function SearchFilters() {
   const navigate = useNavigate();
-  const [distance, setDistance] = useState(25);
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState("");
   const [condition, setCondition] = useState("All");
-  const [lookingFor, setLookingFor] = useState("All");
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(
+    params.get("category")
+  );
+  const [results, setResults] = useState<ListingWithPhotos[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  const filters = useMemo(
+    () => ({
+      category: activeCat,
+      condition,
+      query,
+    }),
+    [activeCat, condition, query]
+  );
+
+  useEffect(() => {
+    if (!showResults) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchListings(filters)
+      .then((data) => {
+        if (!cancelled) setResults(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, showResults]);
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <ScreenHeader
-        title="Search"
-        right={
-          <button className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600">
-            <ClipboardList size={20} />
-          </button>
-        }
-      />
+      <ScreenHeader title="Search" />
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">
-        <div className="mt-1 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-400">
-          <Search size={18} />
-          Search items or keywords
-        </div>
-
-        <div className="mt-3 flex gap-3">
-          <FilterPill label="All Categories" />
-          <FilterPill label="Filters" />
+        <div className="mt-1 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm">
+          <Search size={18} className="text-gray-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search items or keywords"
+            className="w-full bg-transparent outline-none placeholder:text-gray-400"
+          />
         </div>
 
         <Label>Categories</Label>
@@ -59,24 +83,6 @@ export default function SearchFilters() {
           })}
         </div>
 
-        <Label>Distance</Label>
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-gray-700">Within {distance} km</span>
-          <span className="font-semibold text-brand-600">{distance} km</span>
-        </div>
-        <input
-          type="range"
-          min={5}
-          max={100}
-          value={distance}
-          onChange={(e) => setDistance(Number(e.target.value))}
-          className="brand-range mt-3 w-full"
-        />
-        <div className="mt-1 flex justify-between text-xs text-gray-400">
-          <span>5 km</span>
-          <span>100 km</span>
-        </div>
-
         <Label>Condition</Label>
         <div className="flex flex-wrap gap-2">
           <Chip
@@ -94,23 +100,44 @@ export default function SearchFilters() {
           ))}
         </div>
 
-        <Label>Looking for</Label>
-        <div className="flex flex-wrap gap-2">
-          {lookingForOptions.map((o) => (
-            <Chip
-              key={o}
-              label={o}
-              active={lookingFor === o}
-              onClick={() => setLookingFor(o)}
-            />
-          ))}
-        </div>
+        {showResults && (
+          <div className="mt-6 space-y-3">
+            <h3 className="text-sm font-bold text-gray-900">
+              Results {loading ? "" : `(${results.length})`}
+            </h3>
+            {loading && <p className="text-sm text-gray-500">Searching…</p>}
+            {!loading && results.length === 0 && (
+              <p className="text-sm text-gray-500">No matches. Try other filters.</p>
+            )}
+            {results.map((l) => (
+              <ItemCard key={l.id} listing={l} variant="list" />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-gray-100 bg-white p-4">
-        <Button fullWidth onClick={() => navigate("/home")}>
-          Show Results ({listings.length * 22})
+        <Button
+          fullWidth
+          onClick={() => {
+            setShowResults(true);
+            if (showResults) {
+              // re-trigger via filters change is automatic; force refresh:
+              setLoading(true);
+              fetchListings(filters)
+                .then(setResults)
+                .finally(() => setLoading(false));
+            }
+          }}
+        >
+          Show Results
         </Button>
+        <button
+          onClick={() => navigate("/home")}
+          className="mt-2 w-full text-center text-sm font-medium text-gray-500"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -119,14 +146,5 @@ export default function SearchFilters() {
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="mb-3 mt-6 text-sm font-bold text-gray-900">{children}</h3>
-  );
-}
-
-function FilterPill({ label }: { label: string }) {
-  return (
-    <button className="flex flex-1 items-center justify-between rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700">
-      {label}
-      <ChevronDown size={16} className="text-gray-400" />
-    </button>
   );
 }

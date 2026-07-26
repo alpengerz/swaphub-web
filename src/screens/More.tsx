@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import BottomNav from "../components/BottomNav";
+import { useAuth } from "../auth/AuthContext";
 
 const groups = [
   [
@@ -38,6 +39,8 @@ const groups = [
 
 export default function More() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
   return (
     <div className="flex h-full flex-col bg-gray-50">
       <header className="flex items-center px-4 pb-2 pt-4">
@@ -76,7 +79,9 @@ export default function More() {
         ))}
 
         <button
-          onClick={() => navigate("/")}
+          onClick={() => {
+            void signOut().then(() => navigate("/", { replace: true }));
+          }}
           className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-card ring-1 ring-black/5"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
@@ -88,7 +93,7 @@ export default function More() {
         </button>
 
         <p className="mt-6 text-center text-xs text-gray-400">
-          SwapHub v0.1.0 · Prototype
+          SwapHub v0.2.0 · Web + PWA
         </p>
       </div>
 

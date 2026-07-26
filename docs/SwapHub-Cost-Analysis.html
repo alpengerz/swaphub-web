@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SwapHub - Cost & Effort Analysis</title>
+    <style>
+      :root {
+        --green: #1b9a57;
+        --green-dark: #0f6339;
+        --green-50: #e9f7ef;
+        --ink: #14201a;
+        --muted: #5b6b63;
+        --line: #dfe6e2;
+        --amber: #b7791f;
+        --amber-bg: #fdf3e2;
+        --red: #b42318;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        color: var(--ink);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      @page {
+        size: A4;
+        margin: 16mm 15mm 18mm 15mm;
+      }
+
+      .page {
+        page-break-after: always;
+      }
+      .page:last-child { page-break-after: auto; }
+
+      h1, h2, h3 { margin: 0 0 8px; line-height: 1.2; }
+      h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+      h2 {
+        font-size: 19px;
+        font-weight: 800;
+        color: var(--green-dark);
+        margin-top: 26px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--green-50);
+      }
+      h3 { font-size: 14px; font-weight: 700; margin-top: 18px; }
+      p { margin: 0 0 10px; }
+      .muted { color: var(--muted); }
+      .small { font-size: 10.5px; }
+
+      /* Cover */
+      .cover {
+        min-height: 250mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+      .brand .name { font-size: 26px; font-weight: 800; }
+      .brand .name span { color: var(--green); }
+      .cover h1 { font-size: 40px; max-width: 15em; }
+      .cover .sub { font-size: 16px; color: var(--muted); max-width: 34em; margin-top: 10px; }
+      .cover .meta { margin-top: 40px; font-size: 12px; color: var(--muted); }
+      .cover .meta b { color: var(--ink); }
+
+      .lead { font-size: 13.5px; color: var(--muted); max-width: 46em; }
+
+      /* Stat cards */
+      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+      .stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+      .stat .v { font-size: 19px; font-weight: 800; }
+      .stat .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+      .stat.green .v { color: var(--green); }
+      .stat.amber .v { color: var(--amber); }
+
+      table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }
+      th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { background: var(--green-50); color: var(--green-dark); font-weight: 700; }
+      td.r, th.r { text-align: right; }
+      td.c, th.c { text-align: center; }
+      tbody tr:nth-child(even) { background: #fafbfa; }
+      .total-row td { font-weight: 800; border-top: 2px solid var(--green); background: var(--green-50); }
+
+      .callout {
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin: 12px 0;
+        border: 1px solid var(--line);
+        background: #f7faf8;
+      }
+      .callout.warn { background: var(--amber-bg); border-color: #f0d8a8; }
+      .callout.good { background: var(--green-50); border-color: #bfe6cf; }
+      .callout .t { font-weight: 700; margin-bottom: 4px; }
+      .callout.warn .t { color: var(--amber); }
+      .callout.good .t { color: var(--green-dark); }
+
+      /* CSS bar chart */
+      .bars { margin: 12px 0; }
+      .bar-row { display: grid; grid-template-columns: 150px 1fr 60px; align-items: center; gap: 10px; margin: 5px 0; }
+      .bar-label { font-size: 10.5px; color: var(--muted); text-align: right; }
+      .bar-track { background: #eef2f0; border-radius: 5px; height: 16px; overflow: hidden; }
+      .bar-fill { background: var(--green); height: 100%; border-radius: 5px; }
+      .bar-fill.amber { background: var(--amber); }
+      .bar-fill.dark { background: var(--green-dark); }
+      .bar-val { font-size: 10.5px; font-weight: 700; }
+
+      .verdict { border-left: 4px solid var(--green); padding: 6px 0 6px 14px; margin: 12px 0; }
+      .verdict.warn { border-left-color: var(--amber); }
+
+      ul { margin: 6px 0 12px; padding-left: 18px; }
+      li { margin: 3px 0; }
+
+      .footer-note { margin-top: 30px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+      a { color: var(--green-dark); }
+    </style>
+  </head>
+  <body>
+    <!-- COVER -->
+    <section class="page cover">
+      <div class="brand">
+        <svg width="42" height="42" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="#1b9a57" />
+          <path d="M11 12.5a5 5 0 0 1 8.5-2.2l1.2 1.2M21 12.5V8.8m0 3.7h-3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M21 19.5a5 5 0 0 1-8.5 2.2L11.3 20.5M11 19.5v3.7m0-3.7h3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="name">Swap<span>Hub</span></div>
+      </div>
+      <h1>Cost &amp; Effort Analysis</h1>
+      <div class="sub">
+        From working prototype to a shippable marketplace app — build effort,
+        5-year mobile cost of ownership, and whether self-hosting on AWS is
+        worth it at early scale.
+      </div>
+      <div class="meta">
+        Prepared for the SwapHub project &nbsp;·&nbsp; <b>July 2026</b><br />
+        Scope: early app, ~1,000 users, trade-only &nbsp;·&nbsp; FX: 1 USD ≈ <b>₱57</b><br />
+        Live prototype: <b>swaphub-web.vercel.app</b>
+      </div>
+    </section>
+
+    <!-- EXEC SUMMARY -->
+    <section class="page">
+      <h1>Executive summary</h1>
+      <p class="lead">
+        SwapHub is already a working, responsive web prototype (10 screens,
+        deployed and publicly accessible). This document estimates what it takes
+        to turn it into a real product for a first cohort of ~1,000 users, the
+        5-year cost of running it as a native mobile app, and how a self-hosted
+        AWS setup compares to managed services at that scale.
+      </p>
+
+      <div class="stats">
+        <div class="stat"><div class="v">₱400k–1.0M</div><div class="l">Early-app build (1k users)</div></div>
+        <div class="stat"><div class="v">2–3 mo</div><div class="l">To beta launch</div></div>
+        <div class="stat green"><div class="v">&lt; ₱2k/mo</div><div class="l">Infra at 1k users (managed)</div></div>
+        <div class="stat amber"><div class="v">₱1.5M–3.2M</div><div class="l">5-yr native app (contracted)</div></div>
+      </div>
+
+      <h2>Key takeaways</h2>
+      <ul>
+        <li><b>The UI is done.</b> Remaining work is wiring real data and backend logic, not redesigning screens.</li>
+        <li><b>Go PWA-first or Expo.</b> One codebase covers web + iOS + Android; skip separate native builds to halve cost.</li>
+        <li><b>Managed services beat AWS at 1k users.</b> Supabase / Cloudinary / Vercel free tiers cost near ₱0; raw AWS carries fixed monthly baseline plus DevOps labour.</li>
+        <li><b>Maintenance is the real 5-year cost of native apps</b> — Apple/Google force yearly updates whether or not you add features.</li>
+        <li><b>Self-hosting only pays off at scale</b> (roughly 50k–100k+ users), not at launch.</li>
+      </ul>
+
+      <div class="callout good">
+        <div class="t">Recommended path</div>
+        Build a lean, trade-only app on <b>Supabase + Expo</b> reusing this UI,
+        launch a private beta to ~1,000 users, stay on free/managed tiers, and
+        revisit AWS only if you reach real scale.
+      </div>
+    </section>
+
+    <!-- EARLY APP BUILD -->
+    <section class="page">
+      <h1>1 &nbsp; Early app for the first 1,000 users</h1>
+      <p class="lead">
+        The smallest real version: sign up, post items with photos, search,
+        chat, and confirm a trade. Payment-free to avoid escrow, KYC and
+        financial licensing.
+      </p>
+
+      <h2>Build effort (lean scope)</h2>
+      <table>
+        <thead>
+          <tr><th>Workstream</th><th>Approach</th><th class="r">Person-wks</th><th class="r">Est. cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Foundations</td><td>Supabase project, data model, deploy pipeline</td><td class="r">1.5</td><td class="r">₱50k–80k</td></tr>
+          <tr><td>Auth &amp; profiles</td><td>Supabase Auth (OTP), profile pages</td><td class="r">2</td><td class="r">₱70k–110k</td></tr>
+          <tr><td>Listings + photos</td><td>CRUD + Supabase Storage uploads</td><td class="r">3</td><td class="r">₱110k–160k</td></tr>
+          <tr><td>Search &amp; filters</td><td>Postgres full-text + filters</td><td class="r">1.5</td><td class="r">₱50k–80k</td></tr>
+          <tr><td>Home feed</td><td>Recommended / near-you queries</td><td class="r">1</td><td class="r">₱35k–55k</td></tr>
+          <tr><td>Chat / messaging</td><td>Supabase Realtime threads + images</td><td class="r">2.5</td><td class="r">₱90k–130k</td></tr>
+          <tr><td>Offers &amp; trade flow</td><td>Make offer, confirm, complete</td><td class="r">2</td><td class="r">₱70k–110k</td></tr>
+          <tr><td>Reviews &amp; ratings</td><td>Post-trade reviews, reputation</td><td class="r">1</td><td class="r">₱35k–55k</td></tr>
+          <tr><td>Notifications</td><td>Email (Resend) + web push</td><td class="r">1</td><td class="r">₱35k–55k</td></tr>
+          <tr><td>Report + mini admin</td><td>Report button, simple admin list</td><td class="r">1</td><td class="r">₱35k–55k</td></tr>
+          <tr><td>Wire UI → real data</td><td>Connect existing screens (PWA shell)</td><td class="r">3</td><td class="r">₱110k–160k</td></tr>
+          <tr><td>QA &amp; beta polish</td><td>Testing, bug fixing, launch prep</td><td class="r">2</td><td class="r">₱70k–110k</td></tr>
+          <tr class="total-row"><td>Total</td><td>~21.5 person-weeks</td><td class="r">21.5</td><td class="r">₱400k–1.0M</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted">Solo builder ≈ 5 months part-time; two builders ≈ 2–3 months. Blended rate assumed ₱900–1,300/hour.</p>
+
+      <h2>Ways to build v1</h2>
+      <table>
+        <thead><tr><th>Option</th><th class="r">Cost</th><th>Timeline</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Solo / founder-built</td><td class="r">~₱0 cash</td><td>4–6 months</td><td>Your time + this UI; only pay domain</td></tr>
+          <tr><td><b>You + 1 full-stack dev</b> (recommended)</td><td class="r">₱400k–800k</td><td>2–3 months</td><td>Best speed/cost balance</td></tr>
+          <tr><td>Mini-agency package</td><td class="r">₱600k–1.2M</td><td>2–3 months</td><td>Least effort, more cash</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5 YEAR MOBILE -->
+    <section class="page">
+      <h1>2 &nbsp; 5-year cost as a native mobile app</h1>
+      <p class="lead">
+        Published to the App Store and Google Play, kept running for 5 years at
+        ~1,000 users with minimal bug fixes. Assumes one shared Expo (React
+        Native) codebase for both stores.
+      </p>
+
+      <h2>5-year total — three scenarios</h2>
+      <table>
+        <thead>
+          <tr><th>Scenario</th><th class="r">Build</th><th class="r">Store+domain</th><th class="r">Infra</th><th class="r">Maintenance</th><th class="r">5-yr total</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Self-built &amp; self-maintained</td><td class="r">₱0–500k</td><td class="r">₱35k</td><td class="r">₱90–180k</td><td class="r">your time</td><td class="r">₱125k–715k</td></tr>
+          <tr><td><b>Contracted + light retainer</b></td><td class="r">₱500k–1.2M</td><td class="r">₱35k</td><td class="r">₱90–180k</td><td class="r">₱0.9–1.8M</td><td class="r">₱1.5M–3.2M</td></tr>
+          <tr><td>Fully managed (agency SLA)</td><td class="r">₱800k–1.5M</td><td class="r">₱35k</td><td class="r">₱120–200k</td><td class="r">₱2.4–4.8M</td><td class="r">₱3.4M–6.5M</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5-year cost composition (midpoints, PHP thousands)</h3>
+      <div class="bars">
+        <div class="bar-row"><div class="bar-label">Self-built</div><div class="bar-track"><div class="bar-fill" style="width:11%"></div></div><div class="bar-val">₱535k</div></div>
+        <div class="bar-row"><div class="bar-label">Contracted</div><div class="bar-track"><div class="bar-fill amber" style="width:47%"></div></div><div class="bar-val">₱2.32M</div></div>
+        <div class="bar-row"><div class="bar-label">Fully managed</div><div class="bar-track"><div class="bar-fill dark" style="width:100%"></div></div><div class="bar-val">₱4.97M</div></div>
+      </div>
+      <p class="small muted">Bars scaled to the largest scenario. Maintenance is the dominant driver in the contracted and managed cases.</p>
+
+      <div class="callout warn">
+        <div class="t">Why maintenance isn't optional for native apps</div>
+        Even with zero new features, Apple and Google ship breaking OS updates
+        yearly and change store policies. An app left untouched for 12–18 months
+        typically breaks or gets delisted. Budget at least a light retainer
+        (~₱15k–30k/mo) to stay installable and compliant. A single Expo codebase
+        roughly halves this versus separate iOS + Android apps.
+      </div>
+
+      <h2>Recurring fees at ~1,000 users</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Rate</th><th class="r">5-year cost</th></tr></thead>
+        <tbody>
+          <tr><td>Apple Developer Program</td><td>$99/yr (₱5,650)</td><td class="r">₱28,250</td></tr>
+          <tr><td>Google Play (one-time)</td><td>$25 (₱1,430)</td><td class="r">₱1,430</td></tr>
+          <tr><td>Domain</td><td>~₱1,000/yr</td><td class="r">₱5,000</td></tr>
+          <tr><td>Supabase Pro (DB/auth/storage/realtime)</td><td>~$25/mo</td><td class="r">₱85,500</td></tr>
+          <tr><td>Images (Cloudinary), email, push, monitoring</td><td>Free tiers</td><td class="r">₱0</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- AWS COMPARISON -->
+    <section class="page">
+      <h1>3 &nbsp; Self-hosting on AWS — does it lower cost?</h1>
+      <div class="verdict warn">
+        <b>Short answer: no, not at ~1,000 users.</b> Raw AWS adds a fixed
+        monthly baseline <i>and</i> ongoing DevOps labour. Managed/free tiers are
+        near-zero at this scale. AWS only becomes cheaper per user at large
+        scale (~50k–100k+ users) or when specific control/compliance is required.
+      </div>
+
+      <h2>Monthly infrastructure at 1k users: AWS vs managed</h2>
+      <table>
+        <thead><tr><th>Component</th><th class="r">Self-hosted AWS</th><th class="r">Managed (Supabase etc.)</th></tr></thead>
+        <tbody>
+          <tr><td>Compute (API server)</td><td class="r">$15–30 (EC2/Fargate)</td><td class="r">included</td></tr>
+          <tr><td>Database (Postgres)</td><td class="r">$15–25 (RDS)</td><td class="r">₱0–1.4k (Supabase)</td></tr>
+          <tr><td>Load balancer (ALB)</td><td class="r">$18–22 fixed</td><td class="r">included</td></tr>
+          <tr><td>NAT gateway (if used)</td><td class="r">~$32 fixed</td><td class="r">n/a</td></tr>
+          <tr><td>Object storage + CDN</td><td class="r">$3–15 (S3+CloudFront)</td><td class="r">₱0 (Cloudinary free)</td></tr>
+          <tr><td>Data transfer, backups, CloudWatch</td><td class="r">$10–30</td><td class="r">included</td></tr>
+          <tr class="total-row"><td>Monthly total</td><td class="r">~$60–150 (₱3.4k–8.6k)</td><td class="r">₱0–2k</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted">A bare single EC2 box (Postgres on the same instance, no ALB/NAT) can run ~$15–35/mo, but you lose managed backups and high availability and take on <i>all</i> patching and ops yourself.</p>
+
+      <h2>5-year comparison (including labour)</h2>
+      <table>
+        <thead><tr><th>Cost bucket</th><th class="r">Self-hosted AWS</th><th class="r">Managed</th></tr></thead>
+        <tbody>
+          <tr><td>Infrastructure (5 yr)</td><td class="r">₱200k–500k</td><td class="r">₱90k–200k</td></tr>
+          <tr><td>One-time setup (VPC, IaC, CI/CD, hardening)</td><td class="r">₱80k–200k</td><td class="r">~₱0 (in build)</td></tr>
+          <tr><td>DevOps maintenance (patching, scaling, backups)</td><td class="r">₱600k–2.4M</td><td class="r">~₱0 (managed)</td></tr>
+          <tr class="total-row"><td>5-year infra + ops</td><td class="r">₱880k–3.1M</td><td class="r">₱90k–200k</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <div class="t">The hidden cost is people, not servers</div>
+        The AWS bill itself isn't huge, but self-hosting means <b>someone must
+        own security patching, database upgrades, backups, monitoring and
+        scaling</b>. That is the opposite of "minimal bug fixes" — it adds a
+        standing DevOps responsibility that managed platforms absorb for you.
+      </div>
+
+      <h2>When AWS <i>does</i> make sense</h2>
+      <ul>
+        <li>You cross ~50k–100k+ active users and managed per-unit prices exceed AWS baseline + amortized DevOps.</li>
+        <li>You need specific compliance, data residency, or custom infrastructure managed platforms can't offer.</li>
+        <li>You already have in-house DevOps whose time is effectively "free" to the project.</li>
+        <li>Heavy, predictable workloads (large media/video, ML) where reserved AWS capacity beats usage-priced SaaS.</li>
+      </ul>
+
+      <div class="verdict">
+        <b>Recommendation:</b> Stay on managed services (Supabase + Cloudinary +
+        Vercel/Expo) for the early app. Design the backend cleanly so a future
+        migration to AWS is possible — but don't pay the AWS complexity tax until
+        real scale justifies it.
+      </div>
+    </section>
+
+    <!-- CONCLUSION -->
+    <section class="page">
+      <h1>4 &nbsp; Bottom line</h1>
+      <div class="stats">
+        <div class="stat green"><div class="v">₱400k–1.0M</div><div class="l">Lean build (1k users)</div></div>
+        <div class="stat"><div class="v">₱1.5M–2.5M</div><div class="l">5-yr native app (recommended)</div></div>
+        <div class="stat green"><div class="v">₱90k–200k</div><div class="l">5-yr managed infra</div></div>
+        <div class="stat amber"><div class="v">₱880k–3.1M</div><div class="l">5-yr AWS infra + ops</div></div>
+      </div>
+
+      <h2>Recommended plan</h2>
+      <ul>
+        <li><b>Build:</b> Trade-only app on Supabase + Expo, reusing the existing UI. Target 2–3 months, ₱400k–800k with one contractor (or your own time).</li>
+        <li><b>Launch:</b> Private beta to ~1,000 invited users. PWA first if you want to validate before paying store fees; add native store builds once demand is proven.</li>
+        <li><b>Infrastructure:</b> Managed/free tiers. Expect &lt; ₱2k/month at this size. Do not self-host on AWS yet.</li>
+        <li><b>Maintenance:</b> Light retainer (~₱15k–30k/mo) once on the stores, purely to keep up with OS and policy changes.</li>
+        <li><b>Revisit AWS</b> only after ~50k+ users or a specific compliance need.</li>
+      </ul>
+
+      <div class="callout good">
+        <div class="t">Total to get live and run for a year</div>
+        Build (₱400k–800k) + one year of managed infra (~₱20k) + store/domain
+        fees (~₱8k) ≈ <b>₱430k–830k for year one</b>, or dramatically less if you
+        build it yourself.
+      </div>
+
+      <p class="footer-note">
+        All figures are planning ranges for the Philippine market as of July 2026,
+        not fixed quotes. Actual costs vary with team rates, feature scope, and
+        usage. FX assumption 1 USD ≈ ₱57. Live prototype: swaphub-web.vercel.app
+      </p>
+    </section>
+  </body>
+</html>

@@ -1,14 +1,41 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, Bell, MapPin, ChevronDown } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import ItemCard from "../components/ItemCard";
 import Logo from "../components/Logo";
-import { categories, listings } from "../data";
+import { categories } from "../data";
+import { fetchListings } from "../lib/listings";
+import type { ListingWithPhotos } from "../types/database";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Home() {
   const navigate = useNavigate();
-  const recommended = listings.slice(0, 4);
-  const popular = listings.slice(2, 6);
+  const { profile } = useAuth();
+  const [listings, setListings] = useState<ListingWithPhotos[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchListings()
+      .then((data) => {
+        if (!cancelled) setListings(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const recommended = listings.slice(0, 6);
+  const popular = listings.slice(0, 8);
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
@@ -17,11 +44,11 @@ export default function Home() {
           <Logo size={26} />
           <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600">
             <Bell size={20} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
           </button>
         </div>
         <button className="mt-2 flex items-center gap-1 text-sm font-medium text-gray-500">
-          <MapPin size={14} className="text-brand-500" /> New York, USA
+          <MapPin size={14} className="text-brand-500" />{" "}
+          {profile?.city ?? "Philippines"}
           <ChevronDown size={14} />
         </button>
         <button
@@ -35,13 +62,36 @@ export default function Home() {
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto pb-4">
-        <Section title="Recommended for you" onSeeAll={() => navigate("/search")}>
-          <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
-            {recommended.map((l) => (
-              <ItemCard key={l.id} listing={l} />
-            ))}
+        {loading && (
+          <p className="px-4 pt-6 text-sm text-gray-500">Loading listings…</p>
+        )}
+        {error && (
+          <p className="px-4 pt-6 text-sm text-red-600">{error}</p>
+        )}
+        {!loading && !error && listings.length === 0 && (
+          <div className="px-4 pt-10 text-center">
+            <p className="font-semibold text-gray-900">No listings yet</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Be the first to post something to trade.
+            </p>
+            <button
+              onClick={() => navigate("/post")}
+              className="mt-4 text-sm font-semibold text-brand-600"
+            >
+              Post an item →
+            </button>
           </div>
-        </Section>
+        )}
+
+        {recommended.length > 0 && (
+          <Section title="Recommended for you" onSeeAll={() => navigate("/search")}>
+            <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
+              {recommended.map((l) => (
+                <ItemCard key={l.id} listing={l} />
+              ))}
+            </div>
+          </Section>
+        )}
 
         <div className="mt-5 px-4">
           <SectionHeader title="Categories" onSeeAll={() => navigate("/search")} />
@@ -51,7 +101,7 @@ export default function Home() {
               return (
                 <button
                   key={c.id}
-                  onClick={() => navigate("/search")}
+                  onClick={() => navigate(`/search?category=${c.id}`)}
                   className="flex flex-col items-center gap-1.5"
                 >
                   <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-card ring-1 ring-black/5">
@@ -66,13 +116,15 @@ export default function Home() {
           </div>
         </div>
 
-        <Section title="Popular near you" onSeeAll={() => navigate("/search")}>
-          <div className="space-y-3 px-4">
-            {popular.map((l) => (
-              <ItemCard key={l.id} listing={l} variant="list" />
-            ))}
-          </div>
-        </Section>
+        {popular.length > 0 && (
+          <Section title="Popular near you" onSeeAll={() => navigate("/search")}>
+            <div className="space-y-3 px-4">
+              {popular.map((l) => (
+                <ItemCard key={l.id} listing={l} variant="list" />
+              ))}
+            </div>
+          </Section>
+        )}
       </div>
 
       <BottomNav />
@@ -91,10 +143,7 @@ function SectionHeader({
     <div className="flex items-center justify-between">
       <h2 className="text-base font-bold text-gray-900">{title}</h2>
       {onSeeAll && (
-        <button
-          onClick={onSeeAll}
-          className="text-sm font-semibold text-brand-600"
-        >
+        <button onClick={onSeeAll} className="text-sm font-semibold text-brand-600">
           See all
         </button>
       )}

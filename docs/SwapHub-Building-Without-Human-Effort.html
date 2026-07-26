@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SwapHub - Building Without Human Effort</title>
+    <style>
+      :root {
+        --green: #1b9a57;
+        --green-dark: #0f6339;
+        --green-50: #e9f7ef;
+        --ink: #14201a;
+        --muted: #5b6b63;
+        --line: #dfe6e2;
+        --amber: #b7791f;
+        --amber-bg: #fdf3e2;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        color: var(--ink);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+      .page { page-break-after: always; }
+      .page:last-child { page-break-after: auto; }
+
+      h1, h2, h3 { margin: 0 0 8px; line-height: 1.2; }
+      h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+      h2 {
+        font-size: 19px; font-weight: 800; color: var(--green-dark);
+        margin-top: 26px; padding-bottom: 6px; border-bottom: 2px solid var(--green-50);
+      }
+      h3 { font-size: 14px; font-weight: 700; margin-top: 18px; }
+      p { margin: 0 0 10px; }
+      .muted { color: var(--muted); }
+      .small { font-size: 10.5px; }
+      .lead { font-size: 13.5px; color: var(--muted); max-width: 46em; }
+
+      .cover { min-height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+      .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+      .brand .name { font-size: 26px; font-weight: 800; }
+      .brand .name span { color: var(--green); }
+      .cover h1 { font-size: 42px; max-width: 14em; }
+      .cover .sub { font-size: 16px; color: var(--muted); max-width: 34em; margin-top: 12px; }
+      .cover .meta { margin-top: 40px; font-size: 12px; color: var(--muted); }
+      .cover .meta b { color: var(--ink); }
+      .tag { display: inline-block; background: var(--green-50); color: var(--green-dark); font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 999px; margin-bottom: 20px; }
+
+      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+      .stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+      .stat .v { font-size: 19px; font-weight: 800; }
+      .stat .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+      .stat.green .v { color: var(--green); }
+      .stat.amber .v { color: var(--amber); }
+
+      table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }
+      th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { background: var(--green-50); color: var(--green-dark); font-weight: 700; }
+      td.r, th.r { text-align: right; }
+      td.c, th.c { text-align: center; }
+      tbody tr:nth-child(even) { background: #fafbfa; }
+      .total-row td { font-weight: 800; border-top: 2px solid var(--green); background: var(--green-50); }
+
+      .callout { border-radius: 10px; padding: 12px 14px; margin: 12px 0; border: 1px solid var(--line); background: #f7faf8; }
+      .callout.warn { background: var(--amber-bg); border-color: #f0d8a8; }
+      .callout.good { background: var(--green-50); border-color: #bfe6cf; }
+      .callout .t { font-weight: 700; margin-bottom: 4px; }
+      .callout.warn .t { color: var(--amber); }
+      .callout.good .t { color: var(--green-dark); }
+
+      .bars { margin: 12px 0; }
+      .bar-row { display: grid; grid-template-columns: 190px 1fr 70px; align-items: center; gap: 10px; margin: 6px 0; }
+      .bar-label { font-size: 10.5px; color: var(--muted); text-align: right; }
+      .bar-track { background: #eef2f0; border-radius: 5px; height: 18px; overflow: hidden; }
+      .bar-fill { background: var(--green); height: 100%; border-radius: 5px; }
+      .bar-fill.amber { background: var(--amber); }
+      .bar-fill.dark { background: var(--green-dark); }
+      .bar-val { font-size: 10.5px; font-weight: 700; }
+
+      .verdict { border-left: 4px solid var(--green); padding: 6px 0 6px 14px; margin: 12px 0; }
+      ul { margin: 6px 0 12px; padding-left: 18px; }
+      li { margin: 3px 0; }
+      .footer-note { margin-top: 30px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+      .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    </style>
+  </head>
+  <body>
+    <!-- COVER -->
+    <section class="page cover">
+      <div class="brand">
+        <svg width="42" height="42" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="#1b9a57" />
+          <path d="M11 12.5a5 5 0 0 1 8.5-2.2l1.2 1.2M21 12.5V8.8m0 3.7h-3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M21 19.5a5 5 0 0 1-8.5 2.2L11.3 20.5M11 19.5v3.7m0-3.7h3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="name">Swap<span>Hub</span></div>
+      </div>
+      <span class="tag">AI-DRIVEN COST MODEL</span>
+      <h1>Building Without Human Effort</h1>
+      <div class="sub">
+        What it costs to build and run SwapHub when an AI coding agent does the
+        engineering — replacing developer salaries with a software subscription.
+      </div>
+      <div class="meta">
+        SwapHub project &nbsp;·&nbsp; <b>July 2026</b><br />
+        Scope: early app, ~1,000 users, trade-only &nbsp;·&nbsp; FX: 1 USD ≈ <b>₱57</b><br />
+        Proof point: this app's prototype, deployment, and GitHub setup were all done this way.
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section class="page">
+      <h1>The idea in one line</h1>
+      <p class="lead">
+        The largest cost of software is not servers — it is developer labour.
+        When an AI agent (Cursor) writes and maintains the code under your
+        direction, that labour cost collapses into a monthly subscription, and
+        the remaining spend is mostly infrastructure.
+      </p>
+
+      <div class="stats">
+        <div class="stat green"><div class="v">₱10k–35k</div><div class="l">To build the app (AI subscription)</div></div>
+        <div class="stat"><div class="v">₱140k–155k</div><div class="l">All-in, 2 years</div></div>
+        <div class="stat"><div class="v">₱210k–270k</div><div class="l">All-in, 3 years</div></div>
+        <div class="stat green"><div class="v">~75–80%</div><div class="l">Cheaper than hiring</div></div>
+      </div>
+
+      <div class="callout good">
+        <div class="t">Headline</div>
+        Building and running SwapHub "without human effort" costs roughly
+        <b>₱210k–270k over 3 years</b> (≈ ₱6k/month) — versus ~₱1.1M–2.0M to
+        hire a developer, or ₱2.5M+ via an agency. The AI does the coding; the
+        biggest remaining cost is infrastructure.
+      </div>
+
+      <h2>Cursor plans (July 2026)</h2>
+      <table>
+        <thead><tr><th>Plan</th><th class="r">USD / mo</th><th class="r">≈ PHP / mo</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>Pro</td><td class="r">$20</td><td class="r">₱1,140</td><td>Daily use, maintenance</td></tr>
+          <tr><td>Pro+</td><td class="r">$60</td><td class="r">₱3,420</td><td>Heavy building sprints</td></tr>
+          <tr><td>Ultra</td><td class="r">$200</td><td class="r">₱11,400</td><td>Full-time agentic building</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted">All paid plans include unlimited "Auto" model and Tab completions. ~20% cheaper billed annually. Pro is sufficient for a small app; a couple of Pro+ months help during the initial build.</p>
+    </section>
+
+    <!-- COST MODEL -->
+    <section class="page">
+      <h1>The cost model</h1>
+      <p class="lead">
+        Cash cost = AI subscription + infrastructure + store/domain fees.
+        Developer salaries and agency fees disappear; your own time replaces them.
+      </p>
+
+      <h2>Line-by-line vs hiring a developer</h2>
+      <table>
+        <thead>
+          <tr><th>Cost line</th><th class="r">Without human effort (AI)</th><th class="r">Hire a developer</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Initial build</td><td class="r">₱10k–35k (AI sub while building)</td><td class="r">₱400k–800k</td></tr>
+          <tr><td>Dev labour / maintenance (3 yr)</td><td class="r">₱0 cash (your time)</td><td class="r">₱540k–1.08M</td></tr>
+          <tr><td>AI subscription (3 yr)</td><td class="r">₱45k–70k</td><td class="r">optional</td></tr>
+          <tr><td>Infrastructure (3 yr)</td><td class="r">₱144k</td><td class="r">₱144k</td></tr>
+          <tr><td>Store + domain (3 yr)</td><td class="r">₱18k</td><td class="r">₱18k</td></tr>
+          <tr class="total-row"><td>3-year total</td><td class="r">₱210k–270k</td><td class="r">₱1.1M–2.0M</td></tr>
+        </tbody>
+      </table>
+
+      <h2>3-year all-in cost by approach</h2>
+      <div class="bars">
+        <div class="bar-row"><div class="bar-label">Without human effort (AI)</div><div class="bar-track"><div class="bar-fill" style="width:9%"></div></div><div class="bar-val">₱240k</div></div>
+        <div class="bar-row"><div class="bar-label">Hire dev + light retainer</div><div class="bar-track"><div class="bar-fill amber" style="width:36%"></div></div><div class="bar-val">₱900k</div></div>
+        <div class="bar-row"><div class="bar-label">Agency / managed team</div><div class="bar-track"><div class="bar-fill dark" style="width:100%"></div></div><div class="bar-val">₱2.5M</div></div>
+      </div>
+      <p class="small muted">Midpoint 3-year totals · bars scaled to the agency figure.</p>
+
+      <h2>Monthly run cost (steady state, ~1k users)</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Tier</th><th class="r">₱ / month</th></tr></thead>
+        <tbody>
+          <tr><td>Cursor (maintenance mode)</td><td>Pro</td><td class="r">₱1,140</td></tr>
+          <tr><td>Supabase (DB, auth, storage, realtime)</td><td>Pro</td><td class="r">₱1,425</td></tr>
+          <tr><td>Web hosting (Vercel)</td><td>Pro</td><td class="r">₱1,140</td></tr>
+          <tr><td>Images, email, monitoring, push</td><td>Free tiers</td><td class="r">₱0</td></tr>
+          <tr><td>Domain</td><td>Annual</td><td class="r">₱85</td></tr>
+          <tr class="total-row"><td>Typical monthly</td><td></td><td class="r">~₱3,800–6,000</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- HONEST SCOPE -->
+    <section class="page">
+      <h1>What "without human effort" really means</h1>
+      <p class="lead">
+        The AI removes the <i>engineering</i> effort and cost — not every human
+        touch. It is a force multiplier on one person, not a fully autonomous
+        company. Here is the honest split.
+      </p>
+
+      <div class="two">
+        <div>
+          <h3>The AI handles</h3>
+          <ul>
+            <li>Writing all application code (frontend, backend, database)</li>
+            <li>Wiring auth, listings, photos, search, chat, offers</li>
+            <li>Setting up and deploying infrastructure</li>
+            <li>Fixing bugs and applying updates on request</li>
+            <li>Version control, GitHub, and deployment pipelines</li>
+            <li>Documentation and technical decisions</li>
+          </ul>
+        </div>
+        <div>
+          <h3>You still provide</h3>
+          <ul>
+            <li>Product direction and decisions</li>
+            <li>Testing sign-off — confirming things work as intended</li>
+            <li>Cloud & store accounts (Supabase, Vercel, Apple, Google)</li>
+            <li>App-store submission and review responses</li>
+            <li>User support and responding to incidents</li>
+            <li>Business, legal, and privacy compliance</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <div class="t">Your time is the real input</div>
+        Expect roughly <b>4–10 weeks of focused part-time effort</b> to build the
+        lean app by directing the AI, then a <b>few hours per month</b> to
+        maintain it. That time is the cost that replaces a developer salary — no
+        cash, but real involvement.
+      </div>
+
+      <h2>Why this works here</h2>
+      <p>
+        This isn't hypothetical for SwapHub: the working prototype, its public
+        deployment on Vercel, and the GitHub repository were all produced through
+        this exact AI-driven workflow — at nothing more than subscription cost.
+      </p>
+
+      <div class="verdict">
+        <b>Bottom line:</b> Maximizing the AI puts the realistic 3-year cost at
+        <b>₱210k–270k</b> (≈ ₱6k/month), dominated by infrastructure rather than
+        labour. It trades cash for your direct involvement — the cheapest viable
+        path to build and run SwapHub.
+      </div>
+
+      <p class="footer-note">
+        All figures are planning ranges for the Philippine market as of July 2026,
+        not fixed quotes. Cursor pricing per cursor.com (July 2026). FX 1 USD ≈ ₱57.
+        Live prototype: swaphub-web.vercel.app
+      </p>
+    </section>
+  </body>
+</html>
