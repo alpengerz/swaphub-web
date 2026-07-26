@@ -57,7 +57,7 @@ export default function Badges() {
   }, [user]);
 
   return (
-    <SubPageShell title="Trade Badges">
+    <SubPageShell title="Trade Badges" backTo="/settings">
       <p className="mb-3 text-sm text-gray-500">
         Unlock badges as you list, trade, and build trust on SwapHub.
       </p>

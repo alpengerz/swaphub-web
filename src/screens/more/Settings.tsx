@@ -27,7 +27,8 @@ export default function Settings() {
   const { user, profile, updateProfile, resetPassword } = useAuth();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  const backTo = from === "/more" ? "/more" : "/profile";
+  const backTo =
+    from === "/settings" || from === "/more" ? "/settings" : "/profile";
   const fileRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -90,7 +91,7 @@ export default function Settings() {
         bio: bio.trim(),
       });
       localStorage.setItem(NOTIFY_KEY, notify ? "1" : "0");
-      setOk("Settings saved.");
+      setOk("Profile saved.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not save.";
       if (msg.toLowerCase().includes("unique") || msg.includes("duplicate")) {
@@ -126,7 +127,7 @@ export default function Settings() {
     `https://api.dicebear.com/7.x/initials/svg?seed=${displayName || "U"}`;
 
   return (
-    <SubPageShell title="Settings" backTo={backTo}>
+    <SubPageShell title="Edit profile" backTo={backTo}>
       <form onSubmit={onSave} className="space-y-3">
         <div className="flex flex-col items-center rounded-2xl bg-white p-5 shadow-card ring-1 ring-black/5">
           <button

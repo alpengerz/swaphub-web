@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "Can I change my username?",
-    a: "Go to More → Settings to update your display name, city, and bio. Username can also be updated there if it’s still available.",
+    a: "Go to Settings → Edit profile to update your photo, display name, city, and bio.",
   },
   {
     q: "Something looks wrong — who do I contact?",
@@ -30,7 +30,7 @@ export default function Help() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <SubPageShell title="Help Center">
+    <SubPageShell title="Help Center" backTo="/settings">
       <div className="overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-black/5">
         {FAQS.map((item, i) => {
           const isOpen = open === i;

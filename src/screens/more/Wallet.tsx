@@ -7,7 +7,7 @@ export default function Wallet() {
   const navigate = useNavigate();
 
   return (
-    <SubPageShell title="My Wallet">
+    <SubPageShell title="My Wallet" backTo="/settings">
       <div className="rounded-2xl bg-white p-5 shadow-card ring-1 ring-black/5">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">

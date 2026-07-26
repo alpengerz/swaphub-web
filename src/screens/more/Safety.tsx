@@ -30,7 +30,7 @@ export default function Safety() {
   const navigate = useNavigate();
 
   return (
-    <SubPageShell title="Safety Center">
+    <SubPageShell title="Safety Center" backTo="/settings">
       <div className="mb-4 flex items-start gap-3 rounded-2xl bg-brand-50 p-4 text-brand-800">
         <ShieldCheck size={22} className="mt-0.5 shrink-0" />
         <p className="text-sm leading-relaxed">

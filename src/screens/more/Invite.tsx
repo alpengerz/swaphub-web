@@ -45,7 +45,7 @@ export default function Invite() {
   }
 
   return (
-    <SubPageShell title="Invite Friends">
+    <SubPageShell title="Invite Friends" backTo="/settings">
       <div className="rounded-2xl bg-white p-5 shadow-card ring-1 ring-black/5">
         <p className="text-sm leading-relaxed text-gray-600">
           Invite friends to SwapHub. When they join with your link, you both

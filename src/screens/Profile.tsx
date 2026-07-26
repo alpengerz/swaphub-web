@@ -44,9 +44,9 @@ export default function Profile() {
         <h1 className="text-lg font-bold text-gray-900">Profile</h1>
         <button
           type="button"
-          onClick={() => navigate("/settings", { state: { from: "/profile" } })}
+          onClick={() => navigate("/settings")}
           className="relative z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition active:bg-gray-200"
-          aria-label="Open settings"
+          aria-label="Open settings menu"
         >
           <Settings size={22} />
         </button>
@@ -55,7 +55,7 @@ export default function Profile() {
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex flex-col items-center pt-2 text-center">
           <Link
-            to="/settings"
+            to="/edit-profile"
             state={{ from: "/profile" }}
             className="relative"
             aria-label="Edit profile photo"

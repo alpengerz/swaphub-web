@@ -149,12 +149,24 @@ export default function App() {
               }
             />
             <Route
-              path="/more"
+              path="/settings"
               element={
                 <RequireAuth>
                   <More />
                 </RequireAuth>
               }
+            />
+            <Route
+              path="/edit-profile"
+              element={
+                <RequireAuth>
+                  <SettingsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more"
+              element={<Navigate to="/settings" replace />}
             />
             <Route
               path="/more/wallet"
@@ -197,14 +209,6 @@ export default function App() {
               }
             />
             <Route
-              path="/settings"
-              element={
-                <RequireAuth>
-                  <SettingsPage />
-                </RequireAuth>
-              }
-            />
-            <Route
               path="/notifications"
               element={
                 <RequireAuth>
@@ -214,7 +218,7 @@ export default function App() {
             />
             <Route
               path="/more/settings"
-              element={<Navigate to="/settings" replace />}
+              element={<Navigate to="/edit-profile" replace />}
             />
             <Route
               path="/item/:id"
