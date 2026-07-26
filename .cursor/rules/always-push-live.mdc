@@ -9,7 +9,10 @@ When the user asks for app fixes or UI changes for SwapHub:
 
 1. Implement the fix in the repo.
 2. Commit the relevant changes (unless they only asked for a local experiment).
-3. Push to `origin` on the current branch so Vercel can redeploy https://swaphub-web.vercel.app.
-4. Tell the user the live URL after push.
+3. Push to `origin` (`alpengerz/swaphub-web`).
+4. Also deploy production with Vercel CLI so https://swaphub-web.vercel.app updates immediately:
+   `npx vercel deploy --prod --yes`
+   (Vercel project is linked under account `pengmain2023-7671`; GitHub auto-deploy may not track the alpengerz remote.)
+5. Tell the user the live URL after deploy.
 
 Do not wait for a separate "please push" request for routine product fixes.
