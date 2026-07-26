@@ -32,7 +32,7 @@ export default function Profile() {
   }, [user]);
 
   const rows = [
-    { label: "My Listings", count: stats.listings, icon: List, to: "/post" },
+    { label: "My Listings", count: stats.listings, icon: List, to: "/my-listings" },
     { label: "Saved Items", count: 0, icon: Bookmark, to: "/search" },
     { label: "Trade History", count: stats.trades, icon: History, to: "/messages" },
     { label: "My Reviews", count: stats.reviews, icon: Star, to: "/more" },

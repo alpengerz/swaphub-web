@@ -20,6 +20,7 @@ import Safety from "./screens/more/Safety";
 import SettingsPage from "./screens/more/Settings";
 import Messages from "./screens/Messages";
 import PostItem from "./screens/PostItem";
+import MyListings from "./screens/MyListings";
 import Register from "./screens/auth/Register";
 import Login from "./screens/auth/Login";
 import VerifyEmail from "./screens/auth/VerifyEmail";
@@ -92,6 +93,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <PostItem />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/my-listings"
+              element={
+                <RequireAuth>
+                  <MyListings />
                 </RequireAuth>
               }
             />
