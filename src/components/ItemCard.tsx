@@ -1,7 +1,7 @@
 import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ListingWithPhotos } from "../types/database";
-import { coverUrl } from "../lib/listings";
+import { coverUrl, lookingForCardText } from "../lib/listings";
 
 interface ItemCardProps {
   listing: ListingWithPhotos;
@@ -27,7 +27,7 @@ export default function ItemCard({ listing, variant = "grid" }: ItemCardProps) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-gray-900">{listing.title}</p>
           <p className="truncate text-xs text-gray-500">
-            For {listing.looking_for}
+            {lookingForCardText(listing.looking_for)}
           </p>
           <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
             <MapPin size={12} /> {listing.location || "Nearby"}
@@ -46,7 +46,7 @@ export default function ItemCard({ listing, variant = "grid" }: ItemCardProps) {
       <div className="p-3">
         <p className="truncate font-semibold text-gray-900">{listing.title}</p>
         <p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-          For {listing.looking_for}
+          {lookingForCardText(listing.looking_for)}
         </p>
         <p className="mt-2 flex items-center gap-1 text-xs text-gray-400">
           <MapPin size={12} /> {listing.location || "Nearby"}

@@ -1,19 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import Chip from "../components/Chip";
 import ItemCard from "../components/ItemCard";
 import BottomNav from "../components/BottomNav";
 import PullToRefresh from "../components/PullToRefresh";
-import { categories, conditions } from "../data";
+import { categories, conditions, normalizeCategoryId } from "../data";
 import { fetchListings } from "../lib/listings";
 import type { ListingWithPhotos } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
 
 export default function SearchFilters() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [condition, setCondition] = useState("All");
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(() =>
+    normalizeCategoryId(searchParams.get("category"))
+  );
+
+  useEffect(() => {
+    setActiveCat(normalizeCategoryId(searchParams.get("category")));
+  }, [searchParams]);
   const [results, setResults] = useState<ListingWithPhotos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

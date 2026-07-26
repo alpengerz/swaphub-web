@@ -4,12 +4,16 @@ import {
   Sofa,
   Shirt,
   Dumbbell,
-  Grid3x3,
+  Package,
   Wrench,
   Bike,
   Gamepad2,
   Camera,
   BookOpen,
+  Home,
+  Baby,
+  Sparkles,
+  Gem,
 } from "lucide-react";
 
 export type Condition = "New" | "Like New" | "Good" | "Used";
@@ -78,8 +82,18 @@ export const categories: Category[] = [
   { id: "photography", label: "Photography", icon: Camera },
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "books", label: "Books", icon: BookOpen },
-  { id: "more", label: "More", icon: Grid3x3 },
+  { id: "home", label: "Home & Garden", icon: Home },
+  { id: "kids", label: "Kids & Baby", icon: Baby },
+  { id: "beauty", label: "Beauty", icon: Sparkles },
+  { id: "collectibles", label: "Collectibles", icon: Gem },
+  { id: "other", label: "Other", icon: Package },
 ];
+
+/** Alias older "more" category id to Other for display/filter. */
+export function normalizeCategoryId(id: string | null | undefined): string | null {
+  if (!id) return null;
+  return id === "more" ? "other" : id;
+}
 
 export const users: Record<string, User> = {
   david: {

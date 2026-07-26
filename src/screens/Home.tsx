@@ -125,7 +125,10 @@ export default function Home() {
           <div className="mt-5 px-4">
             <SectionHeader title="Categories" onSeeAll={() => navigate("/search")} />
             <div className="mt-3 grid grid-cols-4 gap-3">
-              {categories.slice(0, 8).map((c) => {
+              {[
+                ...categories.filter((c) => c.id !== "other").slice(0, 7),
+                categories.find((c) => c.id === "other")!,
+              ].map((c) => {
                 const Icon = c.icon;
                 return (
                   <button

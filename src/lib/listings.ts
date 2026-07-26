@@ -27,7 +27,14 @@ export async function fetchListings(opts?: {
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
-  if (opts?.category) q = q.eq("category", opts.category);
+  if (opts?.category) {
+    // Treat legacy "more" the same as "other"
+    if (opts.category === "other" || opts.category === "more") {
+      q = q.in("category", ["other", "more"]);
+    } else {
+      q = q.eq("category", opts.category);
+    }
+  }
   if (opts?.condition && opts.condition !== "All") {
     q = q.eq("condition", opts.condition);
   }
@@ -90,6 +97,31 @@ export async function fetchMyListings(userId: string): Promise<ListingWithPhotos
   return (data ?? []) as ListingWithPhotos[];
 }
 
+/** Canonical value when the trader is open to any fair swap offer. */
+export const OPEN_TO_OFFERS = "Open to offers";
+
+export const LOOKING_FOR_PRESETS = [
+  OPEN_TO_OFFERS,
+  "Something similar",
+  "Same category items",
+] as const;
+
+export function isOpenToOffers(value: string | null | undefined): boolean {
+  const v = (value ?? "").trim().toLowerCase();
+  return (
+    v === OPEN_TO_OFFERS.toLowerCase() ||
+    v === "make me an offer" ||
+    v === "any offer" ||
+    v === "open to any offer"
+  );
+}
+
+/** Short line for cards: "Open to offers" or "For Guitar". */
+export function lookingForCardText(value: string): string {
+  if (isOpenToOffers(value)) return OPEN_TO_OFFERS;
+  return value.trim() ? `For ${value.trim()}` : "Open to offers";
+}
+
 export async function createListing(input: {
   ownerId: string;
   title: string;
@@ -118,10 +150,22 @@ export async function createListing(input: {
   if (error) throw error;
 
   const listingId = listing.id as string;
-  for (let i = 0; i < input.files.length; i++) {
-    const file = input.files[i];
+  await uploadListingPhotos(input.ownerId, listingId, input.files, 0);
+  return listingId;
+}
+
+async function uploadListingPhotos(
+  ownerId: string,
+  listingId: string,
+  files: File[],
+  startOrder: number
+) {
+  const sb = requireSupabase();
+  const stamp = Date.now();
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     const ext = file.name.split(".").pop() || "jpg";
-    const path = `${input.ownerId}/${listingId}/${i}.${ext}`;
+    const path = `${ownerId}/${listingId}/${stamp}-${startOrder + i}.${ext}`;
     const { error: upErr } = await sb.storage
       .from("listing-photos")
       .upload(path, file, { upsert: true, contentType: file.type });
@@ -129,11 +173,92 @@ export async function createListing(input: {
     const { error: photoErr } = await sb.from("listing_photos").insert({
       listing_id: listingId,
       storage_path: path,
-      sort_order: i,
+      sort_order: startOrder + i,
     });
     if (photoErr) throw photoErr;
   }
-  return listingId;
+}
+
+export async function updateListing(input: {
+  listingId: string;
+  ownerId: string;
+  title: string;
+  description: string;
+  condition: Condition;
+  category: string;
+  lookingFor: string;
+  location: string;
+  /** Photo row ids to keep; others are removed. */
+  keepPhotoIds: string[];
+  newFiles: File[];
+}): Promise<void> {
+  const sb = requireSupabase();
+  const { data: existing, error: fetchErr } = await sb
+    .from("listings")
+    .select("id, owner_id, listing_photos(*)")
+    .eq("id", input.listingId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!existing || existing.owner_id !== input.ownerId) {
+    throw new Error("You can only edit your own listings.");
+  }
+
+  const { error: updateErr } = await sb
+    .from("listings")
+    .update({
+      title: input.title.trim(),
+      description: input.description.trim(),
+      condition: input.condition,
+      category: input.category,
+      looking_for: input.lookingFor.trim(),
+      location: input.location.trim(),
+    })
+    .eq("id", input.listingId)
+    .eq("owner_id", input.ownerId);
+  if (updateErr) throw updateErr;
+
+  const photos = (existing.listing_photos ?? []) as {
+    id: string;
+    storage_path: string;
+    sort_order: number;
+  }[];
+  const keep = new Set(input.keepPhotoIds);
+  const toRemove = photos.filter((p) => !keep.has(p.id));
+
+  for (const photo of toRemove) {
+    await sb.storage.from("listing-photos").remove([photo.storage_path]);
+    const { error: delErr } = await sb
+      .from("listing_photos")
+      .delete()
+      .eq("id", photo.id);
+    if (delErr) throw delErr;
+  }
+
+  const kept = photos
+    .filter((p) => keep.has(p.id))
+    .sort((a, b) => a.sort_order - b.sort_order);
+  for (let i = 0; i < kept.length; i++) {
+    if (kept[i].sort_order !== i) {
+      await sb
+        .from("listing_photos")
+        .update({ sort_order: i })
+        .eq("id", kept[i].id);
+    }
+  }
+
+  if (input.newFiles.length > 0) {
+    await uploadListingPhotos(
+      input.ownerId,
+      input.listingId,
+      input.newFiles,
+      kept.length
+    );
+  }
+
+  const remaining = kept.length + input.newFiles.length;
+  if (remaining < 1) {
+    throw new Error("Add at least one photo.");
+  }
 }
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {

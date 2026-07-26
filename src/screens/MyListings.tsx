@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import SubPageShell from "../components/SubPageShell";
 import ItemCard from "../components/ItemCard";
 import Button from "../components/Button";
@@ -53,9 +53,20 @@ export default function MyListings() {
         {rows.map((listing) => (
           <div key={listing.id} className="relative">
             <ItemCard listing={listing} variant="list" />
-            <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
+            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
               {listing.status}
             </span>
+            <button
+              type="button"
+              aria-label="Edit listing"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/edit/${listing.id}`);
+              }}
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 shadow ring-1 ring-black/5 transition active:scale-95"
+            >
+              <Pencil size={16} />
+            </button>
           </div>
         ))}
       </div>

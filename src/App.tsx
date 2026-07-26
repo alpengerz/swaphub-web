@@ -107,6 +107,14 @@ export default function App() {
               }
             />
             <Route
+              path="/edit/:id"
+              element={
+                <RequireAuth>
+                  <PostItem />
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/my-listings"
               element={
                 <RequireAuth>

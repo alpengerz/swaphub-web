@@ -6,6 +6,7 @@ import {
   coverUrl,
   fetchListing,
   fetchProfile,
+  isOpenToOffers,
   photoUrls,
   ratingLabel,
 } from "../lib/listings";
@@ -236,7 +237,11 @@ export default function ItemDetails() {
 
           <div className="mt-5">
             <h2 className="text-sm font-bold text-gray-900">I&apos;m looking for</h2>
-            <p className="mt-1 text-sm text-gray-500">{listing.looking_for}</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {isOpenToOffers(listing.looking_for)
+                ? "Open to offers — send a fair swap and let’s talk."
+                : listing.looking_for}
+            </p>
           </div>
 
           <div className="mt-5">
@@ -272,9 +277,21 @@ export default function ItemDetails() {
 
       <div className="flex gap-3 border-t border-gray-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {isOwner ? (
-          <Button fullWidth variant="outline" onClick={() => navigate("/my-listings")}>
-            Manage your listing
-          </Button>
+          <>
+            <Button
+              className="flex-1"
+              onClick={() => navigate(`/edit/${listing.id}`)}
+            >
+              Edit listing
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => navigate("/my-listings")}
+            >
+              My listings
+            </Button>
+          </>
         ) : (
           <>
             <Button
