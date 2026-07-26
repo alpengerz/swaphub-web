@@ -23,8 +23,9 @@ export default function ScreenHeader({
       }`}
     >
       <button
+        type="button"
         onClick={onBack ?? (() => navigate(-1))}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm ring-1 ring-black/5 transition active:scale-95"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm ring-1 ring-black/5 transition active:scale-95"
         aria-label="Go back"
       >
         <ChevronLeft size={22} />

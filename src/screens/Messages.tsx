@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import BottomNav from "../components/BottomNav";
@@ -21,6 +21,7 @@ export default function Messages() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [rows, setRows] = useState<ConvRow[]>([]);
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,12 +31,35 @@ export default function Messages() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((c) => {
+      const partner = user?.id === c.buyer_id ? c.seller : c.buyer;
+      const hay = [
+        partner?.display_name,
+        partner?.username,
+        c.listings?.title,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [rows, query, user?.id]);
+
   return (
     <div className="flex h-full flex-col bg-gray-50">
       <header className="bg-white px-4 pb-3 pt-4">
         <h1 className="text-lg font-bold text-gray-900">Messages</h1>
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-gray-400">
-          <Search size={18} /> Search conversations
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-gray-700">
+          <Search size={18} className="text-gray-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search conversations"
+            className="w-full bg-transparent outline-none placeholder:text-gray-400"
+          />
         </div>
       </header>
 
@@ -43,14 +67,15 @@ export default function Messages() {
         {loading && (
           <p className="p-4 text-sm text-gray-500">Loading conversations…</p>
         )}
-        {!loading && rows.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="px-4 pt-10 text-center text-sm text-gray-500">
-            No messages yet. Make an offer on a listing to start a chat.
+            {rows.length === 0
+              ? "No messages yet. Make an offer on a listing to start a chat."
+              : "No conversations match your search."}
           </div>
         )}
-        {rows.map((c) => {
-          const partner =
-            user?.id === c.buyer_id ? c.seller : c.buyer;
+        {filtered.map((c) => {
+          const partner = user?.id === c.buyer_id ? c.seller : c.buyer;
           const listing = c.listings;
           const avatar =
             partner?.avatar_url ||
@@ -61,6 +86,7 @@ export default function Messages() {
           return (
             <button
               key={c.id}
+              type="button"
               onClick={() => navigate(`/chat/${c.id}`)}
               className="flex w-full items-center gap-3 border-b border-gray-100 bg-white px-4 py-3 text-left"
             >

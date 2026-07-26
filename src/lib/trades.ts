@@ -9,6 +9,9 @@ export async function createOffer(input: {
   offeredListingIds: string[];
   message: string;
 }): Promise<{ offer: Offer; conversationId: string }> {
+  if (input.fromUserId === input.sellerId) {
+    throw new Error("You can’t make an offer on your own listing.");
+  }
   const sb = requireSupabase();
   const conversation = await getOrCreateConversation(
     input.listingId,

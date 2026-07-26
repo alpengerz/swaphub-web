@@ -9,6 +9,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -17,6 +18,10 @@ export default function Register() {
     setError("");
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (!agreed) {
+      setError("Please agree to the Terms of Use and Privacy Policy.");
       return;
     }
     setBusy(true);
@@ -79,8 +84,27 @@ export default function Register() {
             autoComplete="new-password"
           />
         </label>
+        <label className="flex items-start gap-2 text-xs leading-relaxed text-gray-600">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-brand-500"
+          />
+          <span>
+            I agree to the{" "}
+            <Link to="/terms" className="font-semibold text-brand-600">
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="font-semibold text-brand-600">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button fullWidth type="submit" disabled={busy || !configured}>
+        <Button fullWidth type="submit" disabled={busy || !configured || !agreed}>
           {busy ? "Creating…" : "Sign up with email"}
         </Button>
       </form>

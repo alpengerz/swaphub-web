@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, MoreVertical, Send, Plus } from "lucide-react";
+import { ChevronLeft, Send } from "lucide-react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   fetchConversation,
@@ -13,6 +13,7 @@ import { requireSupabase } from "../lib/supabase";
 import type { ListingWithPhotos, Message, Profile } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
 import { markConversationRead } from "../lib/unread";
+import Button from "../components/Button";
 
 export default function Chat() {
   const { id } = useParams();
@@ -23,49 +24,69 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [offerId, setOfferId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [sendError, setSendError] = useState("");
+  const [status, setStatus] = useState<"loading" | "ready" | "forbidden" | "missing">(
+    "loading"
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id || !user) return;
     let channel: RealtimeChannel | null = null;
+    setStatus("loading");
+    setError("");
 
     void (async () => {
-      const conv = await fetchConversation(id);
-      if (!conv) return;
-      const c = conv as {
-        buyer_id: string;
-        seller_id: string;
-        listings?: ListingWithPhotos;
-        buyer?: Profile | null;
-        seller?: Profile | null;
-      };
-      setListing((c.listings as ListingWithPhotos) ?? null);
-      setPartner(user.id === c.buyer_id ? c.seller ?? null : c.buyer ?? null);
-
-      const msgs = await fetchMessages(id);
-      setMessages(msgs);
-      markConversationRead(user.id, id);
-
       try {
-        const sb = requireSupabase();
-        const { data } = await sb
-          .from("offers")
-          .select("id")
-          .eq("conversation_id", id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data?.id) setOfferId(data.id as string);
-      } catch {
-        /* ignore */
-      }
+        const conv = await fetchConversation(id);
+        if (!conv) {
+          setStatus("missing");
+          return;
+        }
+        const c = conv as {
+          buyer_id: string;
+          seller_id: string;
+          listings?: ListingWithPhotos;
+          buyer?: Profile | null;
+          seller?: Profile | null;
+        };
+        if (user.id !== c.buyer_id && user.id !== c.seller_id) {
+          setStatus("forbidden");
+          return;
+        }
+        setListing((c.listings as ListingWithPhotos) ?? null);
+        setPartner(user.id === c.buyer_id ? c.seller ?? null : c.buyer ?? null);
 
-      channel = subscribeToMessages(id, (m) => {
-        setMessages((prev) =>
-          prev.some((x) => x.id === m.id) ? prev : [...prev, m]
-        );
+        const msgs = await fetchMessages(id);
+        setMessages(msgs);
         markConversationRead(user.id, id);
-      });
+
+        try {
+          const sb = requireSupabase();
+          const { data } = await sb
+            .from("offers")
+            .select("id")
+            .eq("conversation_id", id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (data?.id) setOfferId(data.id as string);
+        } catch {
+          /* ignore */
+        }
+
+        channel = subscribeToMessages(id, (m) => {
+          setMessages((prev) =>
+            prev.some((x) => x.id === m.id) ? prev : [...prev, m]
+          );
+          markConversationRead(user.id, id);
+        });
+        setStatus("ready");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not open chat");
+        setStatus("missing");
+      }
     })();
 
     return () => {
@@ -81,6 +102,7 @@ export default function Chat() {
     if (!draft.trim() || !user || !id) return;
     const text = draft;
     setDraft("");
+    setSendError("");
     try {
       const msg = await sendMessage({
         conversationId: id,
@@ -90,15 +112,43 @@ export default function Chat() {
       setMessages((prev) =>
         prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]
       );
-    } catch {
+    } catch (err) {
       setDraft(text);
+      setSendError(err instanceof Error ? err.message : "Could not send message");
     }
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-gray-500">
+        Loading chat…
+      </div>
+    );
+  }
+
+  if (status === "forbidden" || status === "missing") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-semibold text-gray-900">
+          {status === "forbidden" ? "You can’t open this chat" : "Chat not found"}
+        </p>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <Button type="button" onClick={() => navigate("/messages")}>
+          Back to Messages
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
       <header className="flex items-center gap-3 border-b border-gray-100 bg-white px-3 py-2.5">
-        <button onClick={() => navigate(-1)} className="text-gray-700">
+        <button
+          type="button"
+          onClick={() => navigate("/messages")}
+          className="flex h-11 w-11 items-center justify-center rounded-full text-gray-700 active:bg-gray-100"
+          aria-label="Back"
+        >
           <ChevronLeft size={24} />
         </button>
         <img
@@ -107,22 +157,20 @@ export default function Chat() {
             `https://api.dicebear.com/7.x/initials/svg?seed=${partner?.display_name ?? "U"}`
           }
           alt=""
-          className="h-9 w-9 rounded-full object-cover"
+          className="h-10 w-10 rounded-full object-cover"
         />
-        <div className="flex-1">
-          <p className="font-semibold text-gray-900">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-gray-900">
             {partner?.display_name || partner?.username || "Trader"}
           </p>
           <p className="text-xs text-brand-600">SwapHub chat</p>
         </div>
-        <button className="text-gray-500">
-          <MoreVertical size={20} />
-        </button>
       </header>
 
       {listing && (
         <div className="border-b border-gray-100 bg-white px-4 py-2">
           <button
+            type="button"
             onClick={() =>
               offerId
                 ? navigate(`/summary/${offerId}`)
@@ -135,8 +183,10 @@ export default function Chat() {
               alt={listing.title}
               className="h-10 w-10 rounded-lg object-cover"
             />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">{listing.title}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-gray-900">
+                {listing.title}
+              </p>
               <p className="text-xs text-gray-500">{listing.location}</p>
             </div>
             <span className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">
@@ -153,10 +203,10 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-center gap-2 border-t border-gray-100 bg-white p-3">
-        <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-          <Plus size={20} />
-        </button>
+      {sendError && (
+        <p className="px-4 pb-1 text-center text-xs text-red-600">{sendError}</p>
+      )}
+      <div className="flex items-center gap-2 border-t border-gray-100 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -165,8 +215,10 @@ export default function Chat() {
           className="flex-1 rounded-full bg-gray-100 px-4 py-2.5 text-sm outline-none placeholder:text-gray-400"
         />
         <button
+          type="button"
           onClick={() => void send()}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white transition active:scale-95"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-500 text-white transition active:scale-95"
+          aria-label="Send"
         >
           <Send size={18} />
         </button>
@@ -177,28 +229,16 @@ export default function Chat() {
 
 function Bubble({ message, mine }: { message: Message; mine: boolean }) {
   return (
-    <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-      {message.body && (
-        <div
-          className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm ${
-            mine
-              ? "rounded-br-md bg-brand-500 text-white"
-              : "rounded-bl-md bg-white text-gray-800 shadow-sm ring-1 ring-black/5"
-          }`}
-        >
-          {message.body}
-          <p
-            className={`mt-1 text-[10px] ${
-              mine ? "text-white/70" : "text-gray-400"
-            }`}
-          >
-            {new Date(message.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-        </div>
-      )}
+    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
+          mine
+            ? "rounded-br-md bg-brand-500 text-white"
+            : "rounded-bl-md bg-white text-gray-800 shadow-sm ring-1 ring-black/5"
+        }`}
+      >
+        {message.body}
+      </div>
     </div>
   );
 }

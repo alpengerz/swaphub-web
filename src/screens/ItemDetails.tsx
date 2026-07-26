@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Share2, Heart, Star, MapPin, MoreHorizontal, Flag } from "lucide-react";
+import { Share2, Heart, Star, MapPin, Flag, X } from "lucide-react";
 import Button from "../components/Button";
 import {
   coverUrl,
@@ -15,6 +15,14 @@ import { isSaved, toggleSaved } from "./SavedItems";
 import type { ListingWithPhotos, Profile } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
 
+const REPORT_REASONS = [
+  "Suspicious or scam-like",
+  "Prohibited item",
+  "Wrong category / misleading",
+  "Offensive content",
+  "Other",
+];
+
 export default function ItemDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,33 +33,53 @@ export default function ItemDetails() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "missing">(
+    "loading"
+  );
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
+  const [reportNote, setReportNote] = useState("");
+  const [reportMsg, setReportMsg] = useState("");
 
   useEffect(() => {
     if (!id) return;
     setSaved(isSaved(id));
+    setLoadState("loading");
     fetchListing(id)
       .then(async (row) => {
+        if (!row) {
+          setListing(null);
+          setLoadState("missing");
+          return;
+        }
         setListing(row);
-        if (!row) return;
         const embedded = row.profiles as Profile | null | undefined;
         if (embedded) setOwner(embedded);
         else setOwner(await fetchProfile(row.owner_id));
+        setLoadState("ready");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed"));
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Failed");
+        setLoadState("missing");
+      });
   }, [id]);
 
-  if (error) {
+  if (loadState === "loading") {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-sm text-red-600">
-        {error}
+      <div className="flex h-full items-center justify-center text-sm text-gray-500">
+        Loading…
       </div>
     );
   }
 
-  if (!listing) {
+  if (loadState === "missing" || !listing) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-gray-500">
-        Loading…
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-semibold text-gray-900">Listing not found</p>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <Button type="button" onClick={() => navigate("/home")}>
+          Back to Home
+        </Button>
       </div>
     );
   }
@@ -60,7 +88,7 @@ export default function ItemDetails() {
   const isOwner = user?.id === listing.owner_id;
 
   async function startChat() {
-    if (!user || !listing) return;
+    if (!user || !listing || isOwner) return;
     setBusy(true);
     try {
       const conv = await getOrCreateConversation(
@@ -76,25 +104,45 @@ export default function ItemDetails() {
     }
   }
 
-  async function report() {
+  async function submitReport() {
     if (!user || !listing) return;
-    const reason = window.prompt("Why are you reporting this listing?");
-    if (!reason?.trim()) return;
+    setReportMsg("");
     try {
+      const reason = reportNote.trim()
+        ? `${reportReason}: ${reportNote.trim()}`
+        : reportReason;
       await createReport({
         reporterId: user.id,
         targetType: "listing",
         targetId: listing.id,
-        reason: reason.trim(),
+        reason,
       });
-      alert("Thanks — report submitted.");
+      setReportMsg("Thanks — report submitted.");
+      window.setTimeout(() => setReportOpen(false), 1200);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not report");
+      setReportMsg(err instanceof Error ? err.message : "Could not report");
+    }
+  }
+
+  async function shareListing() {
+    if (!listing) return;
+    const item = listing;
+    const url = `${window.location.origin}/item/${item.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: item.title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setError("Link copied.");
+        window.setTimeout(() => setError(""), 1500);
+      }
+    } catch {
+      /* cancelled */
     }
   }
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="relative flex h-full flex-col bg-white">
       <div className="no-scrollbar flex-1 overflow-y-auto pb-4">
         <div className="relative">
           <img
@@ -102,30 +150,41 @@ export default function ItemDetails() {
             alt={listing.title}
             className="h-72 w-full object-cover"
           />
-          <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+          <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
             <button
+              type="button"
               onClick={() => navigate(-1)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+              aria-label="Back"
             >
               <ChevronLeftIcon />
             </button>
             <div className="flex gap-2">
+              {!isOwner && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportOpen(true);
+                    setReportMsg("");
+                  }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+                  aria-label="Report listing"
+                >
+                  <Flag size={18} />
+                </button>
+              )}
               <button
-                onClick={() => void report()}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+                type="button"
+                onClick={() => void shareListing()}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+                aria-label="Share"
               >
-                <Flag size={16} />
-              </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow">
                 <Share2 size={18} />
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!listing) return;
-                  setSaved(toggleSaved(listing.id));
-                }}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow"
+                onClick={() => setSaved(toggleSaved(listing.id))}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow"
                 aria-label={saved ? "Unsave item" : "Save item"}
               >
                 <Heart
@@ -147,22 +206,19 @@ export default function ItemDetails() {
             {images.map((_, i) => (
               <button
                 key={i}
+                type="button"
                 onClick={() => setActive(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === active ? "w-5 bg-brand-500" : "w-1.5 bg-gray-300"
+                className={`h-2 rounded-full transition-all ${
+                  i === active ? "w-5 bg-brand-500" : "w-2 bg-gray-300"
                 }`}
+                aria-label={`Photo ${i + 1}`}
               />
             ))}
           </div>
         )}
 
         <div className="px-4">
-          <div className="flex items-start justify-between">
-            <h1 className="text-xl font-bold text-gray-900">{listing.title}</h1>
-            <button className="text-gray-400">
-              <MoreHorizontal size={22} />
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-gray-900">{listing.title}</h1>
           <div className="mt-1 flex items-center gap-2 text-sm">
             <span className="flex items-center gap-1 font-semibold text-gray-900">
               <Star size={15} className="fill-amber-400 text-amber-400" />
@@ -176,6 +232,7 @@ export default function ItemDetails() {
           <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
             <MapPin size={14} /> {listing.location}
           </p>
+          {error && <p className="mt-2 text-xs text-brand-600">{error}</p>}
 
           <div className="mt-5">
             <h2 className="text-sm font-bold text-gray-900">I&apos;m looking for</h2>
@@ -213,10 +270,10 @@ export default function ItemDetails() {
         </div>
       </div>
 
-      <div className="flex gap-3 border-t border-gray-100 bg-white p-4">
+      <div className="flex gap-3 border-t border-gray-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {isOwner ? (
-          <Button fullWidth variant="outline" onClick={() => navigate("/profile")}>
-            This is your listing
+          <Button fullWidth variant="outline" onClick={() => navigate("/my-listings")}>
+            Manage your listing
           </Button>
         ) : (
           <>
@@ -237,6 +294,62 @@ export default function ItemDetails() {
           </>
         )}
       </div>
+
+      {reportOpen && (
+        <div className="absolute inset-0 z-40 flex flex-col bg-black/40">
+          <button
+            type="button"
+            className="min-h-[25%] flex-1"
+            aria-label="Close"
+            onClick={() => setReportOpen(false)}
+          />
+          <div className="rounded-t-3xl bg-white px-4 pb-6 pt-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900">Report listing</h2>
+              <button
+                type="button"
+                onClick={() => setReportOpen(false)}
+                className="rounded-full p-2 text-gray-500"
+                aria-label="Close report"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <label className="block text-sm font-medium text-gray-700">
+              Reason
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                className="input mt-1"
+              >
+                {REPORT_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mt-3 block text-sm font-medium text-gray-700">
+              Details (optional)
+              <textarea
+                value={reportNote}
+                onChange={(e) => setReportNote(e.target.value)}
+                rows={3}
+                className="input mt-1 resize-none"
+                placeholder="Anything else we should know?"
+              />
+            </label>
+            {reportMsg && (
+              <p className="mt-2 text-sm text-brand-600">{reportMsg}</p>
+            )}
+            <div className="mt-4">
+              <Button fullWidth type="button" onClick={() => void submitReport()}>
+                Submit report
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

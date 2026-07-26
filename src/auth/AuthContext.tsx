@@ -18,6 +18,7 @@ interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   profileComplete: boolean;
+  profileError: string | null;
   refreshProfile: () => Promise<Profile | null>;
   signUpWithEmail: (
     email: string,
@@ -46,10 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (!isSupabaseConfigured) {
       setProfile(null);
+      setProfileError(null);
       return null;
     }
     const { data, error } = await supabase
@@ -60,10 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error("loadProfile", error);
       setProfile(null);
+      setProfileError(error.message || "Could not load your profile.");
       return null;
     }
     const row = (data as Profile | null) ?? null;
     setProfile(row);
+    setProfileError(null);
     return row;
   }, []);
 
@@ -130,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       profile,
       profileComplete: isProfileComplete(profile),
+      profileError,
       refreshProfile,
       async signUpWithEmail(email, password) {
         const redirectTo = `${window.location.origin}/auth/callback`;
@@ -188,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
       },
     }),
-    [loading, session, profile, refreshProfile, loadProfile]
+    [loading, session, profile, profileError, refreshProfile, loadProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

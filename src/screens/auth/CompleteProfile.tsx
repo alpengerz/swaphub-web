@@ -19,7 +19,8 @@ const PH_CITIES = [
 ];
 
 export default function CompleteProfile() {
-  const { profile, updateProfile, user, loading, refreshProfile } = useAuth();
+  const { profile, updateProfile, user, loading, refreshProfile, signOut, profileError } =
+    useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -148,11 +149,20 @@ export default function CompleteProfile() {
             placeholder="What do you like to trade?"
           />
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="mt-auto pt-4">
+        {(error || profileError) && (
+          <p className="text-sm text-red-600">{error || profileError}</p>
+        )}
+        <div className="mt-auto space-y-2 pt-4">
           <Button fullWidth type="submit" disabled={busy}>
             {busy ? "Saving…" : "Continue to SwapHub"}
           </Button>
+          <button
+            type="button"
+            className="w-full py-2 text-center text-sm font-semibold text-gray-500"
+            onClick={() => void signOut().then(() => navigate("/", { replace: true }))}
+          >
+            Log out
+          </button>
         </div>
       </form>
     </div>

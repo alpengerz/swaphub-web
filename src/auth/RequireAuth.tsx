@@ -1,8 +1,10 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import Button from "../components/Button";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { configured, loading, user, profileComplete } = useAuth();
+  const { configured, loading, user, profileComplete, profileError, refreshProfile, signOut } =
+    useAuth();
   const location = useLocation();
 
   if (!configured) {
@@ -19,6 +21,28 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  if (profileError && !profileComplete) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-white px-6 text-center">
+        <h1 className="text-lg font-bold text-gray-900">Couldn’t load profile</h1>
+        <p className="mt-2 text-sm text-gray-500">{profileError}</p>
+        <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
+          <Button fullWidth type="button" onClick={() => void refreshProfile()}>
+            Retry
+          </Button>
+          <Button
+            fullWidth
+            type="button"
+            variant="outline"
+            onClick={() => void signOut().then(() => (window.location.href = "/login"))}
+          >
+            Log out
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!profileComplete && location.pathname !== "/complete-profile") {

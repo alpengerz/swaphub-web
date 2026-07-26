@@ -18,14 +18,30 @@ export default function MakeOffer() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "missing">(
+    "loading"
+  );
 
   useEffect(() => {
     if (!id || !user) return;
-    void fetchListing(id).then(setListing);
+    setLoadState("loading");
+    void fetchListing(id).then((row) => {
+      if (!row) {
+        setListing(null);
+        setLoadState("missing");
+        return;
+      }
+      if (row.owner_id === user.id) {
+        navigate(`/item/${row.id}`, { replace: true });
+        return;
+      }
+      setListing(row);
+      setLoadState("ready");
+    });
     void fetchMyListings(user.id).then((rows) =>
-      setMine(rows.filter((r) => r.status === "active"))
+      setMine(rows.filter((r) => r.status === "active" && r.id !== id))
     );
-  }, [id, user]);
+  }, [id, user, navigate]);
 
   function toggle(listingId: string) {
     setSelected((s) =>
@@ -35,6 +51,10 @@ export default function MakeOffer() {
 
   async function send() {
     if (!user || !listing || selected.length === 0) return;
+    if (listing.owner_id === user.id) {
+      setError("You can’t make an offer on your own listing.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -53,10 +73,21 @@ export default function MakeOffer() {
     }
   }
 
-  if (!listing) {
+  if (loadState === "loading") {
     return (
       <div className="flex h-full items-center justify-center text-sm text-gray-500">
         Loading…
+      </div>
+    );
+  }
+
+  if (loadState === "missing" || !listing) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-semibold text-gray-900">Listing not found</p>
+        <Button type="button" onClick={() => navigate("/home")}>
+          Back to Home
+        </Button>
       </div>
     );
   }

@@ -26,6 +26,9 @@ import TradeHistory from "./screens/TradeHistory";
 import MyReviews from "./screens/MyReviews";
 import SavedItems from "./screens/SavedItems";
 import Notifications from "./screens/Notifications";
+import Privacy from "./screens/legal/Privacy";
+import Terms from "./screens/legal/Terms";
+import PwaToasts from "./components/PwaToasts";
 import Register from "./screens/auth/Register";
 import Login from "./screens/auth/Login";
 import VerifyEmail from "./screens/auth/VerifyEmail";
@@ -40,6 +43,7 @@ export default function App() {
       <UnreadProvider>
       <BrowserRouter>
         <PhoneFrame>
+          <PwaToasts />
           <Routes>
             <Route
               path="/"
@@ -218,6 +222,8 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route
               path="/more/settings"
               element={<Navigate to="/edit-profile" replace />}

@@ -18,7 +18,7 @@ export default function PhoneFrame({ children }: PhoneFrameProps) {
       <div className="relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden bg-white sm:h-[880px] sm:max-h-[92vh] sm:rounded-[2.5rem] sm:border-[10px] sm:border-gray-900 sm:shadow-phone">
         {/* Notch (desktop only) — never intercepts clicks */}
         <div className="pointer-events-none absolute left-1/2 top-0 z-30 hidden h-7 w-36 -translate-x-1/2 rounded-b-2xl bg-gray-900 sm:block" />
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col sm:px-1 sm:pt-3">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col pt-[env(safe-area-inset-top)] sm:px-1 sm:pt-3">
           {children}
         </div>
       </div>

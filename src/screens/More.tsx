@@ -10,6 +10,8 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
+  FileText,
+  Scale,
 } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import { useAuth } from "../auth/AuthContext";
@@ -53,6 +55,18 @@ const groups = [
       sub: "Tips and guidelines",
       icon: ShieldCheck,
       to: "/more/safety",
+    },
+    {
+      label: "Privacy Policy",
+      sub: "How we handle your data",
+      icon: FileText,
+      to: "/privacy",
+    },
+    {
+      label: "Terms of Use",
+      sub: "Rules for using SwapHub",
+      icon: Scale,
+      to: "/terms",
     },
   ],
 ];
