@@ -51,7 +51,7 @@ const groups = [
       label: "Settings",
       sub: "Account and preferences",
       icon: Settings,
-      to: "/more/settings",
+      to: "/settings",
     },
   ],
 ];
@@ -97,7 +97,7 @@ export default function More() {
                   type="button"
                   onClick={() =>
                     navigate(item.to, {
-                      state: item.to === "/more/settings" ? { from: "/more" } : undefined,
+                      state: item.to === "/settings" ? { from: "/more" } : undefined,
                     })
                   }
                   className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-gray-50 ${

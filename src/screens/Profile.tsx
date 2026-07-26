@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Settings,
   BadgeCheck,
@@ -40,24 +40,23 @@ export default function Profile() {
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
-      <header className="flex items-center justify-between px-4 pb-2 pt-4">
+      <header className="relative z-20 flex items-center justify-between px-4 pb-2 pt-4">
         <h1 className="text-lg font-bold text-gray-900">Profile</h1>
-        <button
-          onClick={() => navigate("/more/settings", { state: { from: "/profile" } })}
-          className="text-gray-500"
-          aria-label="Settings"
+        <Link
+          to="/settings"
+          state={{ from: "/profile" }}
+          className="relative z-20 -mr-1 flex h-11 w-11 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100"
+          aria-label="Open settings"
         >
           <Settings size={22} />
-        </button>
+        </Link>
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex flex-col items-center pt-2 text-center">
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/more/settings", { state: { from: "/profile" } })
-            }
+          <Link
+            to="/settings"
+            state={{ from: "/profile" }}
             className="relative"
             aria-label="Edit profile photo"
           >
@@ -72,7 +71,7 @@ export default function Profile() {
             <span className="absolute bottom-0 right-0 rounded-full bg-brand-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
               Edit
             </span>
-          </button>
+          </Link>
           <h2 className="mt-3 text-lg font-bold text-gray-900">
             {profile?.display_name || profile?.username || "Trader"}
           </h2>

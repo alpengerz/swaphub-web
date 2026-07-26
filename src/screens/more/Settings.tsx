@@ -26,10 +26,8 @@ const NOTIFY_KEY = "swaphub.notify";
 export default function Settings() {
   const { user, profile, updateProfile, resetPassword } = useAuth();
   const location = useLocation();
-  const backTo =
-    (location.state as { from?: string } | null)?.from === "/more"
-      ? "/more"
-      : "/profile";
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from === "/more" ? "/more" : "/profile";
   const fileRef = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");

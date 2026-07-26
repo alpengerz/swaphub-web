@@ -196,12 +196,16 @@ export default function App() {
               }
             />
             <Route
-              path="/more/settings"
+              path="/settings"
               element={
                 <RequireAuth>
                   <SettingsPage />
                 </RequireAuth>
               }
+            />
+            <Route
+              path="/more/settings"
+              element={<Navigate to="/settings" replace />}
             />
             <Route
               path="/item/:id"
