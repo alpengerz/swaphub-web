@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Share2, Heart, Star, MapPin, Flag, X } from "lucide-react";
 import Button from "../components/Button";
+import PhotoLightbox from "../components/PhotoLightbox";
 import {
   coverUrl,
   fetchListing,
@@ -41,6 +42,7 @@ export default function ItemDetails() {
   const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
   const [reportNote, setReportNote] = useState("");
   const [reportMsg, setReportMsg] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -146,21 +148,30 @@ export default function ItemDetails() {
     <div className="relative flex h-full flex-col bg-white">
       <div className="no-scrollbar flex-1 overflow-y-auto pb-4">
         <div className="relative">
-          <img
-            src={images[active] || coverUrl(listing)}
-            alt={listing.title}
-            className="h-72 w-full object-cover"
-          />
-          <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (images.length > 0) setLightboxOpen(true);
+            }}
+            className="block w-full"
+            aria-label="View full photo"
+          >
+            <img
+              src={images[active] || coverUrl(listing)}
+              alt={listing.title}
+              className="h-72 w-full object-cover"
+            />
+          </button>
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
+              className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow"
               aria-label="Back"
             >
               <ChevronLeftIcon />
             </button>
-            <div className="flex gap-2">
+            <div className="pointer-events-auto flex gap-2">
               {!isOwner && (
                 <button
                   type="button"
@@ -311,6 +322,16 @@ export default function ItemDetails() {
           </>
         )}
       </div>
+
+      {lightboxOpen && images.length > 0 && (
+        <PhotoLightbox
+          images={images}
+          index={active}
+          alt={listing.title}
+          onClose={() => setLightboxOpen(false)}
+          onIndexChange={setActive}
+        />
+      )}
 
       {reportOpen && (
         <div className="absolute inset-0 z-40 flex flex-col bg-black/40">
