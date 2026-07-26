@@ -16,6 +16,8 @@ html,
 body,
 #root {
   height: 100%;
+  /* Prefer in-app pull-to-refresh over browser/PWA chrome refresh */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -24,6 +26,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eef1f4;
+  overscroll-behavior-y: none;
+  /* Reduce iOS rubber-band that fights custom pull-to-refresh */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Hide scrollbars inside the phone screen while keeping scroll behavior */

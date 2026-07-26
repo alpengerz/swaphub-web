@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import BottomNav from "../components/BottomNav";
+import PullToRefresh from "../components/PullToRefresh";
 import { fetchMyConversations } from "../lib/chat";
 import { coverUrl } from "../lib/listings";
 import type { ListingWithPhotos, Profile } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
+import { useUnread } from "../auth/UnreadContext";
 
 type ConvRow = {
   id: string;
@@ -20,16 +22,28 @@ type ConvRow = {
 export default function Messages() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { refreshUnread } = useUnread();
   const [rows, setRows] = useState<ConvRow[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const loadConversations = useCallback(
+    async (showSpinner = true) => {
+      if (!user) return;
+      if (showSpinner) setLoading(true);
+      try {
+        setRows((await fetchMyConversations(user.id)) as ConvRow[]);
+        await refreshUnread();
+      } finally {
+        if (showSpinner) setLoading(false);
+      }
+    },
+    [user, refreshUnread]
+  );
+
   useEffect(() => {
-    if (!user) return;
-    fetchMyConversations(user.id)
-      .then((data) => setRows(data as ConvRow[]))
-      .finally(() => setLoading(false));
-  }, [user]);
+    void loadConversations(true);
+  }, [loadConversations]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -63,7 +77,7 @@ export default function Messages() {
         </div>
       </header>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto">
+      <PullToRefresh onRefresh={() => loadConversations(false)}>
         {loading && (
           <p className="p-4 text-sm text-gray-500">Loading conversations…</p>
         )}
@@ -122,7 +136,7 @@ export default function Messages() {
             </button>
           );
         })}
-      </div>
+      </PullToRefresh>
 
       <BottomNav />
     </div>
