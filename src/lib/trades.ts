@@ -12,7 +12,30 @@ export async function createOffer(input: {
   if (input.fromUserId === input.sellerId) {
     throw new Error("You can’t make an offer on your own listing.");
   }
+  if (input.offeredListingIds.length < 1) {
+    throw new Error("Select at least one of your listings to offer.");
+  }
+  if (input.offeredListingIds.length > 5) {
+    throw new Error("You can offer at most 5 listings.");
+  }
+  if (input.message.trim().length > 2000) {
+    throw new Error("Offer message is too long.");
+  }
+
   const sb = requireSupabase();
+
+  // Defense-in-depth: offered items must be this user's active listings
+  const { data: owned, error: ownedErr } = await sb
+    .from("listings")
+    .select("id")
+    .eq("owner_id", input.fromUserId)
+    .eq("status", "active")
+    .in("id", input.offeredListingIds);
+  if (ownedErr) throw ownedErr;
+  if ((owned ?? []).length !== input.offeredListingIds.length) {
+    throw new Error("You can only offer your own active listings.");
+  }
+
   const conversation = await getOrCreateConversation(
     input.listingId,
     input.fromUserId,
@@ -26,7 +49,7 @@ export async function createOffer(input: {
       from_user_id: input.fromUserId,
       conversation_id: conversation.id,
       offered_listing_ids: input.offeredListingIds,
-      message: input.message,
+      message: input.message.trim().slice(0, 2000),
       status: "pending",
     })
     .select("*")
@@ -62,14 +85,34 @@ export async function fetchOffer(id: string) {
 
 export async function acceptOfferAndCreateTrade(input: {
   offerId: string;
+  actorUserId: string;
   meetingMethod?: string;
   meetingLocation?: string;
 }): Promise<Trade> {
   const sb = requireSupabase();
+
+  const { data: offer, error: fetchErr } = await sb
+    .from("offers")
+    .select("id, status, listing_id, listings(owner_id)")
+    .eq("id", input.offerId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!offer) throw new Error("Offer not found.");
+  if (offer.status !== "pending") {
+    throw new Error("This offer is no longer pending.");
+  }
+
+  const ownerId =
+    (offer.listings as { owner_id?: string } | null)?.owner_id ?? null;
+  if (!ownerId || ownerId !== input.actorUserId) {
+    throw new Error("Only the listing owner can accept this offer.");
+  }
+
   const { error: offerErr } = await sb
     .from("offers")
     .update({ status: "accepted" })
-    .eq("id", input.offerId);
+    .eq("id", input.offerId)
+    .eq("status", "pending");
   if (offerErr) throw offerErr;
 
   const { data: trade, error } = await sb
@@ -77,7 +120,7 @@ export async function acceptOfferAndCreateTrade(input: {
     .insert({
       offer_id: input.offerId,
       meeting_method: input.meetingMethod ?? "Meet in person",
-      meeting_location: input.meetingLocation ?? "",
+      meeting_location: (input.meetingLocation ?? "").slice(0, 300),
       status: "confirmed",
     })
     .select("*")
@@ -149,12 +192,16 @@ export async function createReport(input: {
   targetId: string;
   reason: string;
 }) {
+  const reason = input.reason.trim().slice(0, 1000);
+  if (reason.length < 3) {
+    throw new Error("Please provide a short reason.");
+  }
   const sb = requireSupabase();
   const { error } = await sb.from("reports").insert({
     reporter_id: input.reporterId,
     target_type: input.targetType,
     target_id: input.targetId,
-    reason: input.reason,
+    reason,
   });
   if (error) throw error;
 }

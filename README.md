@@ -25,13 +25,13 @@ npm run dev
 ### 2. Create a free Supabase project
 
 1. Sign up at [supabase.com](https://supabase.com) → New project.
-2. Open **SQL Editor** → paste and run  
-   [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql)  
-   (creates tables, RLS, storage buckets, realtime).
+2. Open **SQL Editor** → run migrations in order:
+   - [`001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql) — tables, RLS, storage, realtime
+   - [`002_guardrails.sql`](supabase/migrations/002_guardrails.sql) — no self-offers
+   - [`003_security_guardrails.sql`](supabase/migrations/003_security_guardrails.sql) — seller-only accept, storage path scoping, rate limits, review integrity
 3. **Authentication → Providers**
-   - Enable **Email** (confirm email ON for production-like flow).
-   - Enable **Google** (optional): create OAuth credentials in Google Cloud Console; set redirect to  
-     `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
+   - Enable **Email** with **Confirm email ON** (required for production).
+   - Prefer **custom SMTP** (e.g. Resend) so signup is not limited to ~2 emails/hour.
 4. **Authentication → URL configuration**
    - Site URL: `http://localhost:5173` (dev) / your Vercel URL (prod)
    - Redirect URLs:  

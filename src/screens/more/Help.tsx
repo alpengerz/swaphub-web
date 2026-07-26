@@ -21,6 +21,10 @@ const FAQS = [
     a: "Go to Settings → Edit profile to update your photo, display name, city, and bio.",
   },
   {
+    q: "Is SwapHub safe?",
+    a: "Listings, chats, and trades are protected with account login and database security rules. Never share passwords, meet strangers in private places, and report suspicious listings from the item page.",
+  },
+  {
     q: "Can I use SwapHub on desktop?",
     a: "Yes. Open swaphub-web.vercel.app in Chrome, Edge, or Safari on your computer — it works as a normal website. On your phone, use Add to Home Screen for the app-like PWA.",
   },

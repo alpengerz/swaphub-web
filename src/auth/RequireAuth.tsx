@@ -23,6 +23,21 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
+  // Require confirmed email when Auth has confirmation enabled
+  if (
+    !user.email_confirmed_at &&
+    location.pathname !== "/verify-email" &&
+    location.pathname !== "/auth/callback"
+  ) {
+    return (
+      <Navigate
+        to="/verify-email"
+        replace
+        state={{ email: user.email ?? "" }}
+      />
+    );
+  }
+
   if (profileError && !profileComplete) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-white px-6 text-center">
@@ -65,6 +80,15 @@ export function RedirectIfAuthed({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (user && !user.email_confirmed_at) {
+    return (
+      <Navigate
+        to="/verify-email"
+        replace
+        state={{ email: user.email ?? "" }}
+      />
+    );
+  }
   if (user && profileComplete) {
     return <Navigate to="/home" replace />;
   }

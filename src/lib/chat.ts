@@ -6,7 +6,27 @@ export async function getOrCreateConversation(
   buyerId: string,
   sellerId: string
 ): Promise<Conversation> {
+  if (buyerId === sellerId) {
+    throw new Error("You can’t chat with yourself on your own listing.");
+  }
   const sb = requireSupabase();
+
+  const { data: listing, error: listingErr } = await sb
+    .from("listings")
+    .select("id, owner_id, status")
+    .eq("id", listingId)
+    .maybeSingle();
+  if (listingErr) throw listingErr;
+  if (!listing || listing.status !== "active") {
+    throw new Error("Listing is not available.");
+  }
+  if (listing.owner_id !== sellerId) {
+    throw new Error("Invalid chat recipient for this listing.");
+  }
+  if (listing.owner_id === buyerId) {
+    throw new Error("You can’t start a buyer chat on your own listing.");
+  }
+
   const { data: existing } = await sb
     .from("conversations")
     .select("*")
@@ -81,7 +101,8 @@ export async function fetchMessages(conversationId: string): Promise<Message[]> 
     .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(300);
   if (error) throw error;
   return (data ?? []) as Message[];
 }
@@ -91,13 +112,15 @@ export async function sendMessage(input: {
   senderId: string;
   body: string;
 }): Promise<Message> {
+  const body = input.body.trim().slice(0, 4000);
+  if (!body) throw new Error("Message can’t be empty.");
   const sb = requireSupabase();
   const { data, error } = await sb
     .from("messages")
     .insert({
       conversation_id: input.conversationId,
       sender_id: input.senderId,
-      body: input.body.trim(),
+      body,
       image_paths: [],
     })
     .select("*")

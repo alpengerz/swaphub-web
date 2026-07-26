@@ -90,7 +90,17 @@ export default function PostItem() {
     if (!list) return;
     const room = Math.max(0, 5 - existingPhotos.length - files.length);
     if (room === 0) return;
-    const next = [...files, ...Array.from(list)].slice(0, files.length + room);
+    const maxBytes = 5 * 1024 * 1024; // 5MB per image
+    const picked = Array.from(list).filter((f) => {
+      if (!f.type.startsWith("image/")) return false;
+      if (f.type.includes("svg")) return false;
+      if (f.size > maxBytes) {
+        setError("Each photo must be under 5MB.");
+        return false;
+      }
+      return true;
+    });
+    const next = [...files, ...picked].slice(0, files.length + room);
     setFiles(next);
     setPreviews(next.map((f) => URL.createObjectURL(f)));
   }

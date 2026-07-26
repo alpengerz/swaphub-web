@@ -178,9 +178,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async updateProfile(patch) {
         if (!session?.user) throw new Error("Not signed in");
+        // Allowlist only — never let clients set email_verified / id / timestamps abuse
+        const allowed: Partial<Profile> = {};
+        if (typeof patch.username === "string") {
+          allowed.username = patch.username.trim().slice(0, 32);
+        }
+        if (typeof patch.display_name === "string") {
+          allowed.display_name = patch.display_name.trim().slice(0, 80);
+        }
+        if (typeof patch.city === "string") {
+          allowed.city = patch.city.trim().slice(0, 80);
+        }
+        if (typeof patch.bio === "string") {
+          allowed.bio = patch.bio.trim().slice(0, 500);
+        }
+        if (typeof patch.avatar_url === "string") {
+          allowed.avatar_url = patch.avatar_url.slice(0, 500);
+        }
         const payload = {
           id: session.user.id,
-          ...patch,
+          ...allowed,
           updated_at: new Date().toISOString(),
         };
         const { error } = await supabase.from("profiles").upsert(payload);

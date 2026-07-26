@@ -22,6 +22,7 @@ export default function TradeSummary() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [existingTradeId, setExistingTradeId] = useState<string | null>(null);
+  const [isSeller, setIsSeller] = useState(false);
 
   useEffect(() => {
     if (!offerId || !user) return;
@@ -37,6 +38,7 @@ export default function TradeSummary() {
         (o.listings as ListingWithPhotos) ||
         (await fetchListing(o.listing_id));
       setReceiving(target);
+      setIsSeller(Boolean(user.id && target?.owner_id === user.id));
       setLocation(
         target?.location || profile?.city || "Central area, meet in public"
       );
@@ -61,9 +63,13 @@ export default function TradeSummary() {
   }, [offerId, user, profile?.city]);
 
   async function confirm() {
-    if (!offerId) return;
+    if (!offerId || !user) return;
     if (existingTradeId) {
       navigate(`/confirmed/${existingTradeId}`);
+      return;
+    }
+    if (!isSeller) {
+      setError("Only the listing owner can confirm this trade.");
       return;
     }
     setBusy(true);
@@ -71,6 +77,7 @@ export default function TradeSummary() {
     try {
       const trade = await acceptOfferAndCreateTrade({
         offerId,
+        actorUserId: user.id,
         meetingMethod: "Meet in person",
         meetingLocation: location,
       });
@@ -130,12 +137,23 @@ export default function TradeSummary() {
       </div>
 
       <div className="border-t border-gray-100 bg-white p-4">
-        <Button fullWidth disabled={busy || !receiving} onClick={() => void confirm()}>
+        {!isSeller && !existingTradeId && (
+          <p className="mb-3 text-center text-sm text-gray-500">
+            Waiting for the listing owner to confirm this trade.
+          </p>
+        )}
+        <Button
+          fullWidth
+          disabled={busy || !receiving || (!isSeller && !existingTradeId)}
+          onClick={() => void confirm()}
+        >
           {busy
             ? "Confirming…"
             : existingTradeId
               ? "View Confirmation"
-              : "Confirm Trade"}
+              : isSeller
+                ? "Confirm Trade"
+                : "Waiting for seller"}
         </Button>
       </div>
     </div>

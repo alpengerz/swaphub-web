@@ -18,14 +18,18 @@ export async function fetchListings(opts?: {
   condition?: string | null;
   query?: string;
   ownerId?: string;
+  /** Max rows (capped at 100). */
+  limit?: number;
 }): Promise<ListingWithPhotos[]> {
   const sb = requireSupabase();
+  const limit = Math.min(Math.max(opts?.limit ?? 48, 1), 100);
   // Avoid fragile FK aliases — photos are enough for cards/search/home.
   let q = sb
     .from("listings")
     .select("*, listing_photos(*)")
     .eq("status", "active")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
   if (opts?.category) {
     // Treat legacy "more" the same as "other"
@@ -40,11 +44,18 @@ export async function fetchListings(opts?: {
   }
   if (opts?.ownerId) q = q.eq("owner_id", opts.ownerId);
   if (opts?.query?.trim()) {
-    const raw = opts.query.trim().replace(/[%_,.()]/g, " ");
-    const term = `%${raw}%`;
-    q = q.or(
-      `title.ilike.${term},description.ilike.${term},looking_for.ilike.${term}`
-    );
+    // Strip PostgREST filter metacharacters to avoid filter injection
+    const raw = opts.query
+      .trim()
+      .replace(/[%_,.()\\:*"]/g, " ")
+      .replace(/\s+/g, " ")
+      .slice(0, 80);
+    if (raw) {
+      const term = `%${raw}%`;
+      q = q.or(
+        `title.ilike.${term},description.ilike.${term},looking_for.ilike.${term}`
+      );
+    }
   }
 
   const { data, error } = await q;
