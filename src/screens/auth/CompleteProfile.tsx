@@ -1,7 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
-import { useAuth } from "../../auth/AuthContext";
+import { isProfileComplete, useAuth } from "../../auth/AuthContext";
 
 const PH_CITIES = [
   "Metro Manila",
@@ -19,16 +19,37 @@ const PH_CITIES = [
 ];
 
 export default function CompleteProfile() {
-  const { profile, updateProfile, user } = useAuth();
+  const { profile, updateProfile, user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState(profile?.username ?? "");
-  const [displayName, setDisplayName] = useState(
-    profile?.display_name ?? user?.user_metadata?.full_name ?? ""
-  );
-  const [city, setCity] = useState(profile?.city ?? "Metro Manila");
-  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [city, setCity] = useState("Metro Manila");
+  const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const p = profile ?? (await refreshProfile());
+      if (cancelled) return;
+      if (isProfileComplete(p)) {
+        navigate("/home", { replace: true });
+        return;
+      }
+      setUsername(p?.username ?? "");
+      setDisplayName(
+        p?.display_name ?? user?.user_metadata?.full_name ?? ""
+      );
+      setCity(p?.city ?? "Metro Manila");
+      setBio(p?.bio ?? "");
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, user, refreshProfile, navigate]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,12 +65,16 @@ export default function CompleteProfile() {
     }
     setBusy(true);
     try {
-      await updateProfile({
+      const saved = await updateProfile({
         username: cleanUser,
         display_name: displayName.trim(),
         city,
         bio: bio.trim(),
       });
+      if (!isProfileComplete(saved)) {
+        setError("Could not save profile. Please try again.");
+        return;
+      }
       navigate("/home", { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not save profile.";
@@ -61,6 +86,14 @@ export default function CompleteProfile() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (loading || !ready) {
+    return (
+      <div className="flex h-full items-center justify-center bg-white text-sm text-gray-500">
+        Loading your profile…
+      </div>
+    );
   }
 
   return (
@@ -96,7 +129,7 @@ export default function CompleteProfile() {
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="input mt-1"
+            className="input mt-1 bg-white"
           >
             {PH_CITIES.map((c) => (
               <option key={c} value={c}>

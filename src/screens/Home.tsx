@@ -9,10 +9,12 @@ import { categories } from "../data";
 import { fetchListings } from "../lib/listings";
 import type { ListingWithPhotos } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
+import { useUnread } from "../auth/UnreadContext";
 
 export default function Home() {
   const navigate = useNavigate();
   const { profile, updateProfile } = useAuth();
+  const { unreadMessages } = useUnread();
   const [listings, setListings] = useState<ListingWithPhotos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,6 +60,11 @@ export default function Home() {
             aria-label="Notifications"
           >
             <Bell size={20} />
+            {unreadMessages > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                {unreadMessages > 99 ? "99+" : unreadMessages}
+              </span>
+            )}
           </Link>
         </div>
         <button

@@ -12,6 +12,7 @@ import { coverUrl } from "../lib/listings";
 import { requireSupabase } from "../lib/supabase";
 import type { ListingWithPhotos, Message, Profile } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
+import { markConversationRead } from "../lib/unread";
 
 export default function Chat() {
   const { id } = useParams();
@@ -43,6 +44,7 @@ export default function Chat() {
 
       const msgs = await fetchMessages(id);
       setMessages(msgs);
+      markConversationRead(user.id, id);
 
       try {
         const sb = requireSupabase();
@@ -62,6 +64,7 @@ export default function Chat() {
         setMessages((prev) =>
           prev.some((x) => x.id === m.id) ? prev : [...prev, m]
         );
+        markConversationRead(user.id, id);
       });
     })();
 

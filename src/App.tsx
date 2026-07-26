@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PhoneFrame from "./components/PhoneFrame";
 import { AuthProvider } from "./auth/AuthContext";
+import { UnreadProvider } from "./auth/UnreadContext";
 import { RedirectIfAuthed, RequireAuth } from "./auth/RequireAuth";
 import Onboarding from "./screens/Onboarding";
 import Home from "./screens/Home";
@@ -36,6 +37,7 @@ import Setup from "./screens/Setup";
 export default function App() {
   return (
     <AuthProvider>
+      <UnreadProvider>
       <BrowserRouter>
         <PhoneFrame>
           <Routes>
@@ -264,6 +266,7 @@ export default function App() {
           </Routes>
         </PhoneFrame>
       </BrowserRouter>
+      </UnreadProvider>
     </AuthProvider>
   );
 }

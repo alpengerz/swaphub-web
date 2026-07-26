@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Bell, MessageCircle, Handshake } from "lucide-react";
 import SubPageShell from "../components/SubPageShell";
 import { useAuth } from "../auth/AuthContext";
-import { fetchMyConversations } from "../lib/chat";
+import { useUnread } from "../auth/UnreadContext";
+import { fetchUnreadConversationSummaries } from "../lib/unread";
 import { fetchTradeHistory } from "../lib/trades";
 
 type Note = {
@@ -18,34 +19,38 @@ type Note = {
 export default function Notifications() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { unreadMessages, refreshUnread } = useUnread();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+    setLoading(true);
     Promise.all([
-      fetchMyConversations(user.id).catch(() => []),
+      fetchUnreadConversationSummaries(user.id).catch(() => []),
       fetchTradeHistory(user.id).catch(() => []),
+      refreshUnread(),
     ])
-      .then(([convs, trades]) => {
-        const messageNotes: Note[] = (convs as { id: string; last_message_at: string | null }[])
-          .filter((c) => c.last_message_at)
-          .slice(0, 10)
-          .map((c) => ({
-            id: `msg-${c.id}`,
-            title: "Conversation update",
-            body: "You have activity in a trade chat.",
-            at: c.last_message_at as string,
-            href: `/chat/${c.id}`,
-            kind: "message" as const,
-          }));
+      .then(([unreadChats, trades]) => {
+        const messageNotes: Note[] = unreadChats.map((c) => ({
+          id: `msg-${c.id}`,
+          title: c.unread === 1 ? "New message" : `${c.unread} new messages`,
+          body: c.title,
+          at: c.at,
+          href: `/chat/${c.id}`,
+          kind: "message" as const,
+        }));
 
-        const offerNotes: Note[] = trades.slice(0, 10).map((t) => ({
+        const offerNotes: Note[] = trades.slice(0, 8).map((t) => ({
           id: `offer-${t.id}`,
-          title: t.role === "seller" ? "New offer activity" : "Your offer update",
+          title: t.role === "seller" ? "Offer on your listing" : "Your offer update",
           body: `${t.listing?.title ?? "A listing"} · ${t.trade?.status ?? t.status}`,
           at: t.created_at,
-          href: t.trade?.id ? `/summary/${t.trade.id}` : t.listing?.id ? `/item/${t.listing.id}` : "/trade-history",
+          href: t.trade?.id
+            ? `/summary/${t.trade.id}`
+            : t.listing?.id
+              ? `/item/${t.listing.id}`
+              : "/trade-history",
           kind: "offer" as const,
         }));
 
@@ -56,12 +61,12 @@ export default function Notifications() {
         );
       })
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, refreshUnread, unreadMessages]);
 
   return (
     <SubPageShell title="Notifications" backTo="/home">
       <p className="mb-3 text-sm text-gray-500">
-        Alerts for chats and offers related to your trades.
+        New chats and offer activity show up here.
       </p>
       {loading && <p className="text-sm text-gray-500">Loading…</p>}
       {!loading && notes.length === 0 && (
@@ -69,9 +74,12 @@ export default function Notifications() {
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
             <Bell size={22} />
           </span>
-          <p className="mt-3 text-sm font-semibold text-gray-900">You&apos;re all caught up</p>
+          <p className="mt-3 text-sm font-semibold text-gray-900">
+            You&apos;re all caught up
+          </p>
           <p className="mt-1 text-sm text-gray-500">
-            When someone messages you or makes an offer, it will show up here.
+            When someone messages you or makes an offer, you&apos;ll see a badge
+            on the bell and Messages tab.
           </p>
         </div>
       )}

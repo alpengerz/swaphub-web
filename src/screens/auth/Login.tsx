@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Logo from "../../components/Logo";
 import Button from "../../components/Button";
-import { useAuth } from "../../auth/AuthContext";
+import { isProfileComplete, useAuth } from "../../auth/AuthContext";
 
 export default function Login() {
   const { signInWithEmail, signInWithGoogle, configured } = useAuth();
@@ -19,8 +19,14 @@ export default function Login() {
     setError("");
     setBusy(true);
     try {
-      await signInWithEmail(email.trim(), password);
-      navigate(from, { replace: true });
+      const profile = await signInWithEmail(email.trim(), password);
+      if (isProfileComplete(profile)) {
+        navigate(from.startsWith("/complete-profile") ? "/home" : from, {
+          replace: true,
+        });
+      } else {
+        navigate("/complete-profile", { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not log in.");
     } finally {

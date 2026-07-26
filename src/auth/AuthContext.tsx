@@ -18,19 +18,22 @@ interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   profileComplete: boolean;
-  refreshProfile: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ needsVerification: boolean }>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
+  refreshProfile: () => Promise<Profile | null>;
+  signUpWithEmail: (
+    email: string,
+    password: string
+  ) => Promise<{ needsVerification: boolean }>;
+  signInWithEmail: (email: string, password: string) => Promise<Profile | null>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
-  updateProfile: (patch: Partial<Profile>) => Promise<void>;
+  updateProfile: (patch: Partial<Profile>) => Promise<Profile | null>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function isComplete(p: Profile | null): boolean {
+export function isProfileComplete(p: Profile | null | undefined): boolean {
   if (!p) return false;
   return Boolean(
     p.username &&
@@ -45,10 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (!isSupabaseConfigured) {
       setProfile(null);
-      return;
+      return null;
     }
     const { data, error } = await supabase
       .from("profiles")
@@ -56,20 +59,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .maybeSingle();
     if (error) {
-      console.error(error);
+      console.error("loadProfile", error);
       setProfile(null);
-      return;
+      return null;
     }
-    setProfile(data as Profile | null);
+    const row = (data as Profile | null) ?? null;
+    setProfile(row);
+    return row;
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured) return null;
     const {
       data: { session: current },
     } = await supabase.auth.getSession();
     const id = current?.user?.id ?? session?.user?.id;
-    if (id) await loadProfile(id);
+    if (!id) return null;
+    return loadProfile(id);
   }, [loadProfile, session?.user?.id]);
 
   useEffect(() => {
@@ -79,24 +85,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let mounted = true;
+
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
       if (data.session?.user) {
-        loadProfile(data.session.user.id).finally(() => {
-          if (mounted) setLoading(false);
-        });
+        // Defer DB calls so we don't deadlock the auth lock
+        window.setTimeout(() => {
+          void loadProfile(data.session!.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+        }, 0);
       } else {
         setLoading(false);
       }
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       if (next?.user) {
-        void loadProfile(next.user.id);
+        window.setTimeout(() => {
+          void loadProfile(next.user.id).finally(() => {
+            if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+              if (mounted) setLoading(false);
+            }
+          });
+        }, 0);
       } else {
         setProfile(null);
+        if (mounted) setLoading(false);
       }
     });
 
@@ -113,10 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       profile,
-      profileComplete: isComplete(profile),
+      profileComplete: isProfileComplete(profile),
       refreshProfile,
       async signUpWithEmail(email, password) {
-        // Land on /auth/callback so we can show "Email confirmed" after the link.
         const redirectTo = `${window.location.origin}/auth/callback`;
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -124,15 +140,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           options: { emailRedirectTo: redirectTo },
         });
         if (error) throw error;
-        const needsVerification = !data.session;
-        return { needsVerification };
+        return { needsVerification: !data.session };
       },
       async signInWithEmail(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        setSession(data.session);
+        if (data.user) {
+          // Explicit load after password login (don't rely only on the listener)
+          return await loadProfile(data.user.id);
+        }
+        return null;
       },
       async signInWithGoogle() {
         const { error } = await supabase.auth.signInWithOAuth({
@@ -161,17 +182,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async updateProfile(patch) {
         if (!session?.user) throw new Error("Not signed in");
-        const { error } = await supabase
-          .from("profiles")
-          .update({ ...patch, updated_at: new Date().toISOString() })
-          .eq("id", session.user.id);
+        const payload = {
+          id: session.user.id,
+          ...patch,
+          updated_at: new Date().toISOString(),
+        };
+        const { error } = await supabase.from("profiles").upsert(payload);
         if (error) throw error;
-        await loadProfile(session.user.id);
+        return loadProfile(session.user.id);
       },
       async signOut() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         setProfile(null);
+        setSession(null);
       },
     }),
     [loading, session, profile, refreshProfile, loadProfile]
