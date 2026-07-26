@@ -21,6 +21,14 @@ const FAQS = [
     a: "Go to Settings → Edit profile to update your photo, display name, city, and bio.",
   },
   {
+    q: "Can I use SwapHub on desktop?",
+    a: "Yes. Open swaphub-web.vercel.app in Chrome, Edge, or Safari on your computer — it works as a normal website. On your phone, use Add to Home Screen for the app-like PWA.",
+  },
+  {
+    q: "How do I install the app on my phone?",
+    a: "Open SwapHub in your mobile browser → browser menu → Add to Home Screen / Install app. It opens full-screen like a native app.",
+  },
+  {
     q: "Something looks wrong — who do I contact?",
     a: "Email support@swaphub.app with your username and a short description. We’ll help as soon as we can.",
   },

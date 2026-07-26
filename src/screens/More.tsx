@@ -164,7 +164,7 @@ export default function More() {
         )}
 
         <p className="mt-6 text-center text-xs text-gray-400">
-          SwapHub v0.2.0 · Web + PWA
+          SwapHub v0.3.0 · Web + PWA
         </p>
       </div>
 

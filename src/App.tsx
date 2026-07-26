@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import PhoneFrame from "./components/PhoneFrame";
+import AppShell from "./components/AppShell";
 import { AuthProvider } from "./auth/AuthContext";
 import { UnreadProvider } from "./auth/UnreadContext";
 import { RedirectIfAuthed, RequireAuth } from "./auth/RequireAuth";
@@ -42,7 +42,7 @@ export default function App() {
     <AuthProvider>
       <UnreadProvider>
       <BrowserRouter>
-        <PhoneFrame>
+        <AppShell>
           <PwaToasts />
           <Routes>
             <Route
@@ -278,7 +278,7 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </PhoneFrame>
+        </AppShell>
       </BrowserRouter>
       </UnreadProvider>
     </AuthProvider>
