@@ -155,3 +155,121 @@ export async function createReport(input: {
   });
   if (error) throw error;
 }
+
+export type TradeHistoryRow = {
+  id: string;
+  status: string;
+  message: string | null;
+  created_at: string;
+  role: "buyer" | "seller";
+  listing?: {
+    id: string;
+    title: string;
+    listing_photos?: { storage_path: string; sort_order: number }[];
+  } | null;
+  trade?: {
+    id: string;
+    status: string;
+    meeting_location: string;
+    completed_at: string | null;
+  } | null;
+};
+
+export async function fetchTradeHistory(
+  userId: string
+): Promise<TradeHistoryRow[]> {
+  const sb = requireSupabase();
+
+  const asBuyer = await sb
+    .from("offers")
+    .select("*, listings(*, listing_photos(*)), trades(*)")
+    .eq("from_user_id", userId)
+    .order("created_at", { ascending: false });
+
+  const myListingIds = await sb
+    .from("listings")
+    .select("id")
+    .eq("owner_id", userId);
+  const ids = (myListingIds.data ?? []).map((l) => l.id as string);
+
+  let asSellerData: typeof asBuyer.data = [];
+  if (ids.length > 0) {
+    const asSeller = await sb
+      .from("offers")
+      .select("*, listings(*, listing_photos(*)), trades(*)")
+      .in("listing_id", ids)
+      .neq("from_user_id", userId)
+      .order("created_at", { ascending: false });
+    if (asSeller.error) throw asSeller.error;
+    asSellerData = asSeller.data ?? [];
+  }
+
+  if (asBuyer.error) {
+    // Fallback without trades embed
+    const buyerFb = await sb
+      .from("offers")
+      .select("*, listings(*, listing_photos(*))")
+      .eq("from_user_id", userId)
+      .order("created_at", { ascending: false });
+    if (buyerFb.error) throw buyerFb.error;
+    const sellerFb =
+      ids.length > 0
+        ? await sb
+            .from("offers")
+            .select("*, listings(*, listing_photos(*))")
+            .in("listing_id", ids)
+            .neq("from_user_id", userId)
+            .order("created_at", { ascending: false })
+        : { data: [], error: null };
+    if (sellerFb.error) throw sellerFb.error;
+
+    const rows = [
+      ...(buyerFb.data ?? []).map((o) => normalizeOfferRow(o, "buyer")),
+      ...(sellerFb.data ?? []).map((o) => normalizeOfferRow(o, "seller")),
+    ];
+    return rows.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }
+
+  const rows = [
+    ...(asBuyer.data ?? []).map((o) => normalizeOfferRow(o, "buyer")),
+    ...(asSellerData ?? []).map((o) => normalizeOfferRow(o, "seller")),
+  ];
+  return rows.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
+function normalizeOfferRow(
+  o: {
+    id: string;
+    status: string;
+    message: string | null;
+    created_at: string;
+    listings?: TradeHistoryRow["listing"];
+    trades?: TradeHistoryRow["trade"] | TradeHistoryRow["trade"][];
+  },
+  role: "buyer" | "seller"
+): TradeHistoryRow {
+  const tradeRaw = o.trades;
+  const trade = Array.isArray(tradeRaw) ? tradeRaw[0] : tradeRaw;
+  return {
+    id: o.id,
+    status: o.status,
+    message: o.message,
+    created_at: o.created_at,
+    role,
+    listing: o.listings ?? null,
+    trade: trade
+      ? {
+          id: trade.id,
+          status: trade.status,
+          meeting_location: trade.meeting_location,
+          completed_at: trade.completed_at,
+        }
+      : null,
+  };
+}

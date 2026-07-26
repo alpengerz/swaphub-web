@@ -24,6 +24,7 @@ export default function MyListings() {
   return (
     <SubPageShell
       title="My Listings"
+      backTo="/profile"
       footer={
         <div className="border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button

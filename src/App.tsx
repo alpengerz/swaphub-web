@@ -21,6 +21,9 @@ import SettingsPage from "./screens/more/Settings";
 import Messages from "./screens/Messages";
 import PostItem from "./screens/PostItem";
 import MyListings from "./screens/MyListings";
+import TradeHistory from "./screens/TradeHistory";
+import MyReviews from "./screens/MyReviews";
+import SavedItems from "./screens/SavedItems";
 import Register from "./screens/auth/Register";
 import Login from "./screens/auth/Login";
 import VerifyEmail from "./screens/auth/VerifyEmail";
@@ -101,6 +104,30 @@ export default function App() {
               element={
                 <RequireAuth>
                   <MyListings />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trade-history"
+              element={
+                <RequireAuth>
+                  <TradeHistory />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/my-reviews"
+              element={
+                <RequireAuth>
+                  <MyReviews />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/saved"
+              element={
+                <RequireAuth>
+                  <SavedItems />
                 </RequireAuth>
               }
             />

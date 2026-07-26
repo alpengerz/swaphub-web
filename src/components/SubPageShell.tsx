@@ -6,10 +6,13 @@ export default function SubPageShell({
   title,
   children,
   footer,
+  backTo,
 }: {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Prefer an explicit parent route over browser history. */
+  backTo?: string;
 }) {
   const navigate = useNavigate();
 
@@ -18,7 +21,7 @@ export default function SubPageShell({
       <header className="flex items-center gap-2 bg-white px-2 pb-3 pt-4">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => (backTo ? navigate(backTo) : navigate(-1))}
           className="rounded-xl p-2 text-gray-700 transition active:bg-gray-100"
           aria-label="Go back"
         >

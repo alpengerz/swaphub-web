@@ -95,7 +95,11 @@ export default function More() {
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => navigate(item.to)}
+                  onClick={() =>
+                    navigate(item.to, {
+                      state: item.to === "/more/settings" ? { from: "/more" } : undefined,
+                    })
+                  }
                   className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-gray-50 ${
                     i !== group.length - 1 ? "border-b border-gray-100" : ""
                   }`}

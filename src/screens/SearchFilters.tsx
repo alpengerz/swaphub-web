@@ -1,25 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
-import ScreenHeader from "../components/ScreenHeader";
 import Chip from "../components/Chip";
 import Button from "../components/Button";
 import ItemCard from "../components/ItemCard";
+import BottomNav from "../components/BottomNav";
 import { categories, conditions } from "../data";
 import { fetchListings } from "../lib/listings";
 import type { ListingWithPhotos } from "../types/database";
+import { useAuth } from "../auth/AuthContext";
 
 export default function SearchFilters() {
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [condition, setCondition] = useState("All");
-  const [activeCat, setActiveCat] = useState<string | null>(
-    params.get("category")
-  );
+  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [results, setResults] = useState<ListingWithPhotos[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const filters = useMemo(
     () => ({
@@ -31,24 +28,37 @@ export default function SearchFilters() {
   );
 
   useEffect(() => {
-    if (!showResults) return;
     let cancelled = false;
     setLoading(true);
-    fetchListings(filters)
-      .then((data) => {
-        if (!cancelled) setResults(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    setError("");
+    const timer = window.setTimeout(() => {
+      fetchListings(filters)
+        .then((data) => {
+          if (!cancelled) setResults(data);
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : "Search failed");
+            setResults([]);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 200);
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [filters, showResults]);
+  }, [filters]);
+
+  const mine = user ? results.filter((l) => l.owner_id === user.id) : [];
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <ScreenHeader title="Search" />
+      <header className="px-4 pb-2 pt-4">
+        <h1 className="text-lg font-bold text-gray-900">Search</h1>
+      </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">
         <div className="mt-1 flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm">
@@ -63,12 +73,13 @@ export default function SearchFilters() {
 
         <Label>Categories</Label>
         <div className="grid grid-cols-5 gap-2">
-          {categories.slice(0, 5).map((c) => {
+          {categories.map((c) => {
             const Icon = c.icon;
             const active = activeCat === c.id;
             return (
               <button
                 key={c.id}
+                type="button"
                 onClick={() => setActiveCat(active ? null : c.id)}
                 className={`flex flex-col items-center gap-1.5 rounded-2xl border py-3 transition ${
                   active
@@ -100,45 +111,68 @@ export default function SearchFilters() {
           ))}
         </div>
 
-        {showResults && (
-          <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-3">
+          <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">
               Results {loading ? "" : `(${results.length})`}
             </h3>
-            {loading && <p className="text-sm text-gray-500">Searching…</p>}
-            {!loading && results.length === 0 && (
-              <p className="text-sm text-gray-500">No matches. Try other filters.</p>
+            {(activeCat || condition !== "All" || query.trim()) && (
+              <button
+                type="button"
+                className="text-xs font-semibold text-brand-600"
+                onClick={() => {
+                  setActiveCat(null);
+                  setCondition("All");
+                  setQuery("");
+                }}
+              >
+                Clear filters
+              </button>
             )}
-            {results.map((l) => (
-              <ItemCard key={l.id} listing={l} variant="list" />
-            ))}
           </div>
-        )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          {loading && <p className="text-sm text-gray-500">Searching…</p>}
+          {!loading && results.length === 0 && (
+            <p className="text-sm text-gray-500">
+              No matches. Clear filters or try other keywords.
+            </p>
+          )}
+          {!loading && mine.length > 0 && !query.trim() && !activeCat && (
+            <p className="text-xs text-gray-400">
+              Including {mine.length} of your listing{mine.length === 1 ? "" : "s"}.
+            </p>
+          )}
+          {results.map((l) => (
+            <div key={l.id} className="relative">
+              <ItemCard listing={l} variant="list" />
+              {user && l.owner_id === user.id && (
+                <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-brand-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  Yours
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="border-t border-gray-100 bg-white p-4">
+      <div className="border-t border-gray-100 bg-white p-3">
         <Button
           fullWidth
+          type="button"
           onClick={() => {
-            setShowResults(true);
-            if (showResults) {
-              // re-trigger via filters change is automatic; force refresh:
-              setLoading(true);
-              fetchListings(filters)
-                .then(setResults)
-                .finally(() => setLoading(false));
-            }
+            setLoading(true);
+            fetchListings(filters)
+              .then(setResults)
+              .catch((err) =>
+                setError(err instanceof Error ? err.message : "Search failed")
+              )
+              .finally(() => setLoading(false));
           }}
         >
-          Show Results
+          Refresh results
         </Button>
-        <button
-          onClick={() => navigate("/home")}
-          className="mt-2 w-full text-center text-sm font-medium text-gray-500"
-        >
-          Cancel
-        </button>
       </div>
+      <BottomNav />
     </div>
   );
 }

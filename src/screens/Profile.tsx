@@ -33,9 +33,9 @@ export default function Profile() {
 
   const rows = [
     { label: "My Listings", count: stats.listings, icon: List, to: "/my-listings" },
-    { label: "Saved Items", count: 0, icon: Bookmark, to: "/search" },
-    { label: "Trade History", count: stats.trades, icon: History, to: "/messages" },
-    { label: "My Reviews", count: stats.reviews, icon: Star, to: "/more" },
+    { label: "Saved Items", count: 0, icon: Bookmark, to: "/saved" },
+    { label: "Trade History", count: stats.trades, icon: History, to: "/trade-history" },
+    { label: "My Reviews", count: stats.reviews, icon: Star, to: "/my-reviews" },
   ];
 
   return (
@@ -43,7 +43,7 @@ export default function Profile() {
       <header className="flex items-center justify-between px-4 pb-2 pt-4">
         <h1 className="text-lg font-bold text-gray-900">Profile</h1>
         <button
-          onClick={() => navigate("/more/settings")}
+          onClick={() => navigate("/more/settings", { state: { from: "/profile" } })}
           className="text-gray-500"
           aria-label="Settings"
         >
@@ -53,14 +53,26 @@ export default function Profile() {
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex flex-col items-center pt-2 text-center">
-          <img
-            src={
-              profile?.avatar_url ||
-              `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.display_name ?? "U"}`
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/more/settings", { state: { from: "/profile" } })
             }
-            alt=""
-            className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-card"
-          />
+            className="relative"
+            aria-label="Edit profile photo"
+          >
+            <img
+              src={
+                profile?.avatar_url ||
+                `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.display_name ?? "U"}`
+              }
+              alt=""
+              className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-card"
+            />
+            <span className="absolute bottom-0 right-0 rounded-full bg-brand-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+              Edit
+            </span>
+          </button>
           <h2 className="mt-3 text-lg font-bold text-gray-900">
             {profile?.display_name || profile?.username || "Trader"}
           </h2>

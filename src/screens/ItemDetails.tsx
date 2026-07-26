@@ -5,11 +5,13 @@ import Button from "../components/Button";
 import {
   coverUrl,
   fetchListing,
+  fetchProfile,
   photoUrls,
   ratingLabel,
 } from "../lib/listings";
 import { createReport } from "../lib/trades";
 import { getOrCreateConversation } from "../lib/chat";
+import { isSaved, toggleSaved } from "./SavedItems";
 import type { ListingWithPhotos, Profile } from "../types/database";
 import { useAuth } from "../auth/AuthContext";
 
@@ -18,6 +20,7 @@ export default function ItemDetails() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [listing, setListing] = useState<ListingWithPhotos | null>(null);
+  const [owner, setOwner] = useState<Profile | null>(null);
   const [active, setActive] = useState(0);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -25,8 +28,15 @@ export default function ItemDetails() {
 
   useEffect(() => {
     if (!id) return;
+    setSaved(isSaved(id));
     fetchListing(id)
-      .then(setListing)
+      .then(async (row) => {
+        setListing(row);
+        if (!row) return;
+        const embedded = row.profiles as Profile | null | undefined;
+        if (embedded) setOwner(embedded);
+        else setOwner(await fetchProfile(row.owner_id));
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed"));
   }, [id]);
 
@@ -47,7 +57,6 @@ export default function ItemDetails() {
   }
 
   const images = photoUrls(listing);
-  const owner = (listing.profiles as Profile | null | undefined) ?? null;
   const isOwner = user?.id === listing.owner_id;
 
   async function startChat() {
@@ -111,8 +120,13 @@ export default function ItemDetails() {
                 <Share2 size={18} />
               </button>
               <button
-                onClick={() => setSaved((s) => !s)}
+                type="button"
+                onClick={() => {
+                  if (!listing) return;
+                  setSaved(toggleSaved(listing.id));
+                }}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow"
+                aria-label={saved ? "Unsave item" : "Save item"}
               >
                 <Heart
                   size={18}

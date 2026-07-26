@@ -20,9 +20,10 @@ export async function fetchListings(opts?: {
   ownerId?: string;
 }): Promise<ListingWithPhotos[]> {
   const sb = requireSupabase();
+  // Avoid fragile FK aliases — photos are enough for cards/search/home.
   let q = sb
     .from("listings")
-    .select("*, listing_photos(*), profiles(*)")
+    .select("*, listing_photos(*)")
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
@@ -32,7 +33,8 @@ export async function fetchListings(opts?: {
   }
   if (opts?.ownerId) q = q.eq("owner_id", opts.ownerId);
   if (opts?.query?.trim()) {
-    const term = `%${opts.query.trim()}%`;
+    const raw = opts.query.trim().replace(/[%_,.()]/g, " ");
+    const term = `%${raw}%`;
     q = q.or(
       `title.ilike.${term},description.ilike.${term},looking_for.ilike.${term}`
     );
@@ -43,14 +45,37 @@ export async function fetchListings(opts?: {
   return (data ?? []) as ListingWithPhotos[];
 }
 
+export async function uploadAvatar(
+  userId: string,
+  file: File
+): Promise<string> {
+  const sb = requireSupabase();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${userId}/avatar.${ext}`;
+  const { error: upErr } = await sb.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+  if (upErr) throw upErr;
+  // cache-bust so the new photo shows immediately
+  return `${publicUrl("avatars", path)}?t=${Date.now()}`;
+}
+
 export async function fetchListing(id: string): Promise<ListingWithPhotos | null> {
   const sb = requireSupabase();
   const { data, error } = await sb
     .from("listings")
-    .select("*, listing_photos(*), profiles(*)")
+    .select("*, listing_photos(*), profiles!listings_owner_id_fkey(*)")
     .eq("id", id)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    const fallback = await sb
+      .from("listings")
+      .select("*, listing_photos(*)")
+      .eq("id", id)
+      .maybeSingle();
+    if (fallback.error) throw fallback.error;
+    return fallback.data as ListingWithPhotos | null;
+  }
   return data as ListingWithPhotos | null;
 }
 
