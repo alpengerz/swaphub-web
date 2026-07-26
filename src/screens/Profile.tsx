@@ -43,7 +43,7 @@ export default function Profile() {
       <header className="flex items-center justify-between px-4 pb-2 pt-4">
         <h1 className="text-lg font-bold text-gray-900">Profile</h1>
         <button
-          onClick={() => navigate("/more")}
+          onClick={() => navigate("/more/settings")}
           className="text-gray-500"
           aria-label="Settings"
         >

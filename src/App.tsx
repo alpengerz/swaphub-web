@@ -12,6 +12,12 @@ import TradeSummary from "./screens/TradeSummary";
 import TradeConfirmed from "./screens/TradeConfirmed";
 import Profile from "./screens/Profile";
 import More from "./screens/More";
+import Wallet from "./screens/more/Wallet";
+import Invite from "./screens/more/Invite";
+import Badges from "./screens/more/Badges";
+import Help from "./screens/more/Help";
+import Safety from "./screens/more/Safety";
+import SettingsPage from "./screens/more/Settings";
 import Messages from "./screens/Messages";
 import PostItem from "./screens/PostItem";
 import Register from "./screens/auth/Register";
@@ -110,6 +116,54 @@ export default function App() {
               element={
                 <RequireAuth>
                   <More />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/wallet"
+              element={
+                <RequireAuth>
+                  <Wallet />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/invite"
+              element={
+                <RequireAuth>
+                  <Invite />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/badges"
+              element={
+                <RequireAuth>
+                  <Badges />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/help"
+              element={
+                <RequireAuth>
+                  <Help />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/safety"
+              element={
+                <RequireAuth>
+                  <Safety />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/more/settings"
+              element={
+                <RequireAuth>
+                  <SettingsPage />
                 </RequireAuth>
               }
             />

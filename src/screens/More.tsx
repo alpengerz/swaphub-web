@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Wallet,
@@ -18,28 +19,63 @@ const groups = [
       label: "My Wallet",
       sub: "0 credits. No money, just trades.",
       icon: Wallet,
+      to: "/more/wallet",
     },
     {
       label: "Invite Friends",
       sub: "Earn reputation points",
       icon: UserPlus,
+      to: "/more/invite",
     },
     {
       label: "Trade Badges",
       sub: "Unlock achievements",
       icon: Award,
+      to: "/more/badges",
     },
   ],
   [
-    { label: "Help Center", sub: "FAQs and support", icon: HelpCircle },
-    { label: "Safety Center", sub: "Tips and guidelines", icon: ShieldCheck },
-    { label: "Settings", sub: "Account and preferences", icon: Settings },
+    {
+      label: "Help Center",
+      sub: "FAQs and support",
+      icon: HelpCircle,
+      to: "/more/help",
+    },
+    {
+      label: "Safety Center",
+      sub: "Tips and guidelines",
+      icon: ShieldCheck,
+      to: "/more/safety",
+    },
+    {
+      label: "Settings",
+      sub: "Account and preferences",
+      icon: Settings,
+      to: "/more/settings",
+    },
   ],
 ];
 
 export default function More() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [logoutError, setLogoutError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLogoutError("");
+    setLoggingOut(true);
+    try {
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (err) {
+      setLogoutError(
+        err instanceof Error ? err.message : "Could not log out. Try again."
+      );
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
@@ -58,7 +94,9 @@ export default function More() {
               return (
                 <button
                   key={item.label}
-                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${
+                  type="button"
+                  onClick={() => navigate(item.to)}
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-gray-50 ${
                     i !== group.length - 1 ? "border-b border-gray-100" : ""
                   }`}
                 >
@@ -79,18 +117,21 @@ export default function More() {
         ))}
 
         <button
-          onClick={() => {
-            void signOut().then(() => navigate("/", { replace: true }));
-          }}
-          className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-card ring-1 ring-black/5"
+          type="button"
+          disabled={loggingOut}
+          onClick={() => void handleLogout()}
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-card ring-1 ring-black/5 transition active:bg-red-50 disabled:opacity-60"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500">
             <LogOut size={19} />
           </span>
           <span className="flex-1 text-sm font-semibold text-red-500">
-            Log Out
+            {loggingOut ? "Logging out…" : "Log Out"}
           </span>
         </button>
+        {logoutError && (
+          <p className="mt-2 text-center text-sm text-red-600">{logoutError}</p>
+        )}
 
         <p className="mt-6 text-center text-xs text-gray-400">
           SwapHub v0.2.0 · Web + PWA
