@@ -24,6 +24,7 @@ import MyListings from "./screens/MyListings";
 import TradeHistory from "./screens/TradeHistory";
 import MyReviews from "./screens/MyReviews";
 import SavedItems from "./screens/SavedItems";
+import Notifications from "./screens/Notifications";
 import Register from "./screens/auth/Register";
 import Login from "./screens/auth/Login";
 import VerifyEmail from "./screens/auth/VerifyEmail";
@@ -200,6 +201,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <SettingsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <RequireAuth>
+                  <Notifications />
                 </RequireAuth>
               }
             />

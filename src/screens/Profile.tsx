@@ -40,16 +40,16 @@ export default function Profile() {
 
   return (
     <div className="flex h-full flex-col bg-gray-50">
-      <header className="relative z-20 flex items-center justify-between px-4 pb-2 pt-4">
+      <header className="relative z-20 flex items-center justify-between gap-3 px-4 pb-2 pt-4">
         <h1 className="text-lg font-bold text-gray-900">Profile</h1>
-        <Link
-          to="/settings"
-          state={{ from: "/profile" }}
-          className="relative z-20 -mr-1 flex h-11 w-11 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100"
+        <button
+          type="button"
+          onClick={() => navigate("/settings", { state: { from: "/profile" } })}
+          className="relative z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition active:bg-gray-200"
           aria-label="Open settings"
         >
           <Settings size={22} />
-        </Link>
+        </button>
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4">

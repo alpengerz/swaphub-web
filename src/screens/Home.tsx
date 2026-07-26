@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, Bell, MapPin, ChevronDown } from "lucide-react";
 import BottomNav from "../components/BottomNav";
+import CityPicker from "../components/CityPicker";
 import ItemCard from "../components/ItemCard";
 import Logo from "../components/Logo";
 import { categories } from "../data";
@@ -11,10 +12,11 @@ import { useAuth } from "../auth/AuthContext";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, updateProfile } = useAuth();
   const [listings, setListings] = useState<ListingWithPhotos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cityOpen, setCityOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,24 +36,41 @@ export default function Home() {
     };
   }, []);
 
-  const recommended = listings.slice(0, 6);
-  const popular = listings.slice(0, 8);
+  const city = profile?.city ?? "Metro Manila";
+  const nearby = useMemo(() => {
+    const inCity = listings.filter(
+      (l) => l.location && l.location.toLowerCase() === city.toLowerCase()
+    );
+    return inCity.length > 0 ? inCity : listings;
+  }, [listings, city]);
+
+  const recommended = nearby.slice(0, 6);
+  const popular = nearby.slice(0, 8);
 
   return (
-    <div className="flex h-full flex-col bg-gray-50">
-      <header className="bg-white px-4 pb-3 pt-4">
-        <div className="flex items-center justify-between">
+    <div className="relative flex h-full flex-col bg-gray-50">
+      <header className="relative z-20 bg-white px-4 pb-3 pt-4">
+        <div className="flex items-center justify-between gap-3">
           <Logo size={26} />
-          <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+          <Link
+            to="/notifications"
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition active:bg-gray-200"
+            aria-label="Notifications"
+          >
             <Bell size={20} />
-          </button>
+          </Link>
         </div>
-        <button className="mt-2 flex items-center gap-1 text-sm font-medium text-gray-500">
-          <MapPin size={14} className="text-brand-500" />{" "}
-          {profile?.city ?? "Philippines"}
+        <button
+          type="button"
+          onClick={() => setCityOpen(true)}
+          className="mt-2 flex items-center gap-1 rounded-lg py-1.5 pr-2 text-sm font-medium text-gray-600 transition active:bg-gray-100"
+        >
+          <MapPin size={14} className="text-brand-500" />
+          {city}
           <ChevronDown size={14} />
         </button>
         <button
+          type="button"
           onClick={() => navigate("/search")}
           className="mt-3 flex w-full items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-left text-sm text-gray-400"
         >
@@ -75,6 +94,7 @@ export default function Home() {
               Be the first to post something to trade.
             </p>
             <button
+              type="button"
               onClick={() => navigate("/post")}
               className="mt-4 text-sm font-semibold text-brand-600"
             >
@@ -101,6 +121,7 @@ export default function Home() {
               return (
                 <button
                   key={c.id}
+                  type="button"
                   onClick={() => navigate(`/search?category=${c.id}`)}
                   className="flex flex-col items-center gap-1.5"
                 >
@@ -117,7 +138,7 @@ export default function Home() {
         </div>
 
         {popular.length > 0 && (
-          <Section title="Popular near you" onSeeAll={() => navigate("/search")}>
+          <Section title={`Popular near ${city}`} onSeeAll={() => navigate("/search")}>
             <div className="space-y-3 px-4">
               {popular.map((l) => (
                 <ItemCard key={l.id} listing={l} variant="list" />
@@ -128,6 +149,16 @@ export default function Home() {
       </div>
 
       <BottomNav />
+
+      {cityOpen && (
+        <CityPicker
+          city={city}
+          onClose={() => setCityOpen(false)}
+          onSelect={async (next) => {
+            await updateProfile({ city: next });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -143,7 +174,11 @@ function SectionHeader({
     <div className="flex items-center justify-between">
       <h2 className="text-base font-bold text-gray-900">{title}</h2>
       {onSeeAll && (
-        <button onClick={onSeeAll} className="text-sm font-semibold text-brand-600">
+        <button
+          type="button"
+          onClick={onSeeAll}
+          className="text-sm font-semibold text-brand-600"
+        >
           See all
         </button>
       )}
