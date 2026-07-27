@@ -485,7 +485,7 @@
                 <li>Messages (Realtime), Make Offer, Trade Summary</li>
                 <li>Reports, notifications shell, settings, privacy/terms</li>
                 <li>Pull-to-refresh, unread badges, city picker</li>
-                <li>Security hardening migration set (001–003)</li>
+                <li>DB security guardrails applied in Supabase</li>
               </ul>
             </div>
             <div class="card accent">
@@ -616,13 +616,12 @@
             <div class="card warn">
               <h3>Still operational (you must do)</h3>
               <ul>
-                <li>Run SQL migrations <b>002</b> + <b>003</b> on production Supabase</li>
                 <li>Connect <b>Resend SMTP</b> + raise email rate limits</li>
                 <li>Buy/verify a sending domain</li>
                 <li>Keep Confirm Email ON in Auth settings</li>
                 <li>Optional later: Cloudflare in front of custom domain</li>
               </ul>
-              <p class="tiny" style="margin-top:10px;">DDoS: SPA alone can’t stop traffic floods — edge + Supabase limits + DB throttles are the layers.</p>
+              <p class="tiny" style="margin-top:10px;">DB guardrails are already live. DDoS: SPA alone can’t stop traffic floods — edge + Supabase limits + DB throttles are the layers.</p>
             </div>
           </div>
         </div>
@@ -661,7 +660,6 @@
             <div class="card">
               <h3>Must-have (P0)</h3>
               <ul class="checklist todo">
-                <li>Apply migrations 002 + 003 in prod</li>
                 <li>Custom SMTP + domain</li>
                 <li>Custom domain on Vercel</li>
                 <li>Admin view for reports</li>
@@ -705,10 +703,10 @@
               <div class="n">Phase 0 · Now</div>
               <h3>Stabilize</h3>
               <ul>
-                <li>Run SQL 002+003</li>
                 <li>Resend + domain</li>
                 <li>Smoke-test auth/trade</li>
                 <li>Fix critical bugs only</li>
+                <li>Seed first city listings</li>
               </ul>
               <p class="tiny">1–2 weeks</p>
             </div>
@@ -906,14 +904,14 @@
           <div class="eyebrow">Recommendation</div>
           <h1>Ship the PWA beta. Don’t rebuild.</h1>
           <div class="quote" style="margin:18px 0 22px; border-color:#6ee7a8;">
-            Keep the current architecture (Vercel + Supabase). Finish operational guardrails, invite a small city cohort, and only go native stores after retention is real.
+            Keep the current architecture (Vercel + Supabase). Finish SMTP/domain ops, invite a small city cohort, and only go native stores after retention is real.
           </div>
           <div class="grid g3">
             <div class="card">
               <h3>Do next week</h3>
               <ul>
-                <li>Run SQL 003 in Supabase</li>
                 <li>Buy domain + Resend SMTP</li>
+                <li>Raise Auth email rate limit</li>
                 <li>Invite 20–50 testers</li>
               </ul>
             </div>
@@ -946,11 +944,11 @@
             <div class="card accent">
               <h3>Technical checklist</h3>
               <ol>
-                <li>Apply <code>002_guardrails.sql</code> + <code>003_security_guardrails.sql</code></li>
                 <li>Connect Resend SMTP in Supabase Auth</li>
                 <li>Verify sending domain DNS</li>
                 <li>Raise Auth email rate limit</li>
                 <li>Point custom domain to Vercel</li>
+                <li>Configure Storage file size / MIME limits</li>
               </ol>
             </div>
             <div class="card">
