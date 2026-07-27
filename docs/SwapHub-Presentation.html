@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SwapHub — Product & Architecture Presentation</title>
+    <style>
+      :root {
+        --brand: #1b9a57;
+        --brand-dark: #0f6339;
+        --brand-soft: #e9f7ef;
+        --ink: #14201a;
+        --muted: #5b6b63;
+        --line: #d7e0db;
+        --bg: #f4f7f5;
+        --card: #ffffff;
+        --amber: #b7791f;
+        --amber-bg: #fdf3e2;
+        --danger: #b42318;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        background: #0c1611;
+        color: var(--ink);
+        overflow: hidden;
+      }
+
+      .deck {
+        height: 100%;
+        width: 100%;
+        position: relative;
+      }
+
+      .slide {
+        display: none;
+        height: 100%;
+        padding: clamp(28px, 4vh, 48px) clamp(32px, 5vw, 72px);
+        background:
+          radial-gradient(1200px 500px at 100% -10%, rgba(27, 154, 87, 0.12), transparent 55%),
+          linear-gradient(180deg, #fbfcfb 0%, var(--bg) 100%);
+        flex-direction: column;
+      }
+      .slide.active { display: flex; }
+
+      .slide.cover {
+        background:
+          radial-gradient(900px 500px at 80% 20%, rgba(27, 154, 87, 0.35), transparent 50%),
+          linear-gradient(145deg, #0d2418 0%, #123222 45%, #0a1a12 100%);
+        color: #fff;
+        justify-content: center;
+      }
+      .slide.cover .muted { color: rgba(255,255,255,0.72); }
+      .slide.cover h1 { color: #fff; }
+      .slide.dark {
+        background: linear-gradient(160deg, #10261a, #0c1611 70%);
+        color: #fff;
+      }
+      .slide.dark h1, .slide.dark h2, .slide.dark h3 { color: #fff; }
+      .slide.dark .muted { color: rgba(255,255,255,0.7); }
+      .slide.dark .card {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.12);
+        color: #fff;
+      }
+      .slide.dark table th { background: rgba(27,154,87,0.25); color: #d7f5e5; }
+      .slide.dark table td { border-color: rgba(255,255,255,0.12); }
+      .slide.dark .pill { background: rgba(27,154,87,0.2); color: #b7efd0; }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 22px;
+        letter-spacing: -0.3px;
+      }
+      .brand span { color: var(--brand); }
+      .cover .brand span { color: #6ee7a8; }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 4.2vw, 44px);
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.1;
+        color: var(--ink);
+      }
+      h2 {
+        margin: 0 0 14px;
+        font-size: clamp(20px, 2.4vw, 28px);
+        font-weight: 800;
+        color: var(--brand-dark);
+      }
+      h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      p { margin: 0 0 10px; line-height: 1.5; }
+      .lead {
+        font-size: clamp(15px, 1.5vw, 18px);
+        color: var(--muted);
+        max-width: 52rem;
+        margin-bottom: 22px;
+      }
+      .muted { color: var(--muted); }
+      .small { font-size: 13px; }
+      .tiny { font-size: 12px; color: var(--muted); }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brand);
+        margin-bottom: 10px;
+      }
+      .cover .eyebrow { color: #8ef0bc; }
+
+      .grid { display: grid; gap: 14px; }
+      .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      @media (max-width: 900px) {
+        .g2, .g3, .g4 { grid-template-columns: 1fr; }
+        .slide { overflow: auto; }
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+      .card.accent { border-color: #bfe6cf; background: var(--brand-soft); }
+      .card.warn { border-color: #f0d8a8; background: var(--amber-bg); }
+      .stat .v {
+        font-size: clamp(22px, 2.6vw, 30px);
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: var(--brand-dark);
+      }
+      .stat .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+      ul { margin: 0; padding-left: 18px; }
+      li { margin: 6px 0; line-height: 1.4; }
+      .checklist { list-style: none; padding: 0; }
+      .checklist li {
+        padding-left: 22px;
+        position: relative;
+      }
+      .checklist li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.45em;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--brand);
+      }
+      .checklist.todo li::before { background: #c5d0ca; }
+      .checklist.done li::before { background: var(--brand); }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        background: var(--card);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      th, td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-weight: 700;
+      }
+      tr:last-child td { border-bottom: 0; }
+      td.r, th.r { text-align: right; white-space: nowrap; }
+      .total td {
+        font-weight: 800;
+        background: var(--brand-soft);
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill.amber { background: var(--amber-bg); color: var(--amber); }
+      .pill.danger { background: #fdecea; color: var(--danger); }
+
+      .arch {
+        display: grid;
+        grid-template-columns: 1.1fr 0.7fr 1.2fr;
+        gap: 12px;
+        align-items: stretch;
+      }
+      .arch .arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand);
+        font-weight: 800;
+        font-size: 28px;
+      }
+      @media (max-width: 900px) {
+        .arch { grid-template-columns: 1fr; }
+        .arch .arrow { transform: rotate(90deg); height: 24px; }
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .flow .step {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .flow .chev { color: var(--brand); font-weight: 800; }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 900px) { .timeline { grid-template-columns: 1fr; } }
+      .phase .n {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--brand);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+      }
+
+      .footer-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        background: rgba(12, 22, 17, 0.88);
+        color: rgba(255,255,255,0.8);
+        font-size: 12px;
+        backdrop-filter: blur(8px);
+        z-index: 20;
+      }
+      .progress {
+        position: absolute;
+        left: 0;
+        bottom: 44px;
+        height: 3px;
+        background: var(--brand);
+        width: 0%;
+        transition: width 160ms ease;
+      }
+      .nav-btns { display: flex; gap: 8px; }
+      .nav-btns button {
+        border: 1px solid rgba(255,255,255,0.2);
+        background: transparent;
+        color: #fff;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .nav-btns button:hover { background: rgba(255,255,255,0.08); }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 18px;
+        flex: 1;
+        min-height: 0;
+      }
+      @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+      .fill { flex: 1; min-height: 0; }
+      .spacer { height: 12px; }
+
+      .kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+
+      .slide-body { flex: 1; min-height: 0; overflow: auto; padding-bottom: 56px; }
+      .cover .slide-body { overflow: visible; padding-bottom: 0; }
+
+      .quote {
+        border-left: 4px solid var(--brand);
+        padding: 4px 0 4px 14px;
+        font-size: 18px;
+        font-weight: 600;
+        max-width: 40rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck" id="deck">
+      <!-- 1 COVER -->
+      <section class="slide cover active" data-title="Cover">
+        <div class="slide-body">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="#1b9a57" />
+              <path d="M11 12.5a5 5 0 0 1 8.5-2.2l1.2 1.2M21 12.5V8.8m0 3.7h-3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 19.5a5 5 0 0 1-8.5 2.2L11.3 20.5M11 19.5v3.7m0-3.7h3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Swap<span>Hub</span>
+          </div>
+          <div class="spacer"></div>
+          <div class="eyebrow">Product · Architecture · Roadmap · Cost</div>
+          <h1>Trade what you have<br />for what you need.</h1>
+          <p class="lead" style="color:rgba(255,255,255,0.78); max-width:36rem;">
+            A barter marketplace — web + installable PWA — with no in-app payments.
+            Built, secured, and ready to harden into a production beta.
+          </p>
+          <div class="grid g3" style="max-width:720px; margin-top:28px;">
+            <div class="card" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.14);">
+              <div class="stat"><div class="v" style="color:#fff;">Live</div><div class="l" style="color:rgba(255,255,255,0.7);">swaphub-web.vercel.app</div></div>
+            </div>
+            <div class="card" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.14);">
+              <div class="stat"><div class="v" style="color:#fff;">&lt;₱2k/mo</div><div class="l" style="color:rgba(255,255,255,0.7);">Infra at ~1k users</div></div>
+            </div>
+            <div class="card" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.14);">
+              <div class="stat"><div class="v" style="color:#fff;">PWA</div><div class="l" style="color:rgba(255,255,255,0.7);">Android + iOS home screen</div></div>
+            </div>
+          </div>
+          <p class="tiny" style="margin-top:36px; color:rgba(255,255,255,0.55);">July 2026 · FX assumption 1 USD ≈ ₱57 · Confidential project brief</p>
+        </div>
+      </section>
+
+      <!-- 2 AGENDA -->
+      <section class="slide" data-title="Agenda">
+        <div class="slide-body">
+          <div class="eyebrow">Agenda</div>
+          <h1>What we’ll cover</h1>
+          <div class="grid g2 fill" style="margin-top:18px;">
+            <div class="card">
+              <ol style="margin:0; padding-left:20px; font-size:16px; line-height:1.8;">
+                <li><b>Problem & opportunity</b></li>
+                <li><b>Product overview</b> — what SwapHub does</li>
+                <li><b>What’s already built</b></li>
+                <li><b>Architecture & security</b></li>
+                <li><b>Gaps to production-ready</b></li>
+              </ol>
+            </div>
+            <div class="card">
+              <ol start="6" style="margin:0; padding-left:20px; font-size:16px; line-height:1.8;">
+                <li><b>Roadmap</b> — phases & milestones</li>
+                <li><b>Cost model</b> — now, 1k users, 5 years</li>
+                <li><b>Build options</b> — founder vs contractor</li>
+                <li><b>Recommendation & next steps</b></li>
+              </ol>
+              <p class="tiny" style="margin-top:18px;">Navigate with ← → or Space · Press F for fullscreen</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 PROBLEM -->
+      <section class="slide" data-title="Problem">
+        <div class="slide-body">
+          <div class="eyebrow">Opportunity</div>
+          <h1>Why SwapHub exists</h1>
+          <p class="lead">
+            People already trade informally on Facebook groups and chat apps — but discovery is messy,
+            trust is weak, and cash pressure is high. SwapHub makes barter structured, local, and safe.
+          </p>
+          <div class="grid g3">
+            <div class="card">
+              <h3>The pain</h3>
+              <ul>
+                <li>Unused items sit idle while buyers still spend cash</li>
+                <li>Marketplace apps push payments & fees</li>
+                <li>FB groups = spam, scams, no structured offers</li>
+              </ul>
+            </div>
+            <div class="card accent">
+              <h3>The insight</h3>
+              <ul>
+                <li>Trade-only removes escrow/KYC complexity</li>
+                <li>Local meetup + chat is enough for v1</li>
+                <li>PWA reaches Android/iOS without store delay</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Positioning</h3>
+              <ul>
+                <li>“Carousell for barter”</li>
+                <li>No money in the app</li>
+                <li>Fair swaps, city-based discovery</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 PRODUCT -->
+      <section class="slide" data-title="Product">
+        <div class="slide-body">
+          <div class="eyebrow">Product</div>
+          <h1>Core loop</h1>
+          <div class="flow" style="margin:18px 0 24px;">
+            <div class="step">Sign up</div><div class="chev">→</div>
+            <div class="step">Post item</div><div class="chev">→</div>
+            <div class="step">Browse / search</div><div class="chev">→</div>
+            <div class="step">Make offer</div><div class="chev">→</div>
+            <div class="step">Chat</div><div class="chev">→</div>
+            <div class="step">Confirm meetup</div><div class="chev">→</div>
+            <div class="step">Swap</div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <h3>For traders</h3>
+              <ul class="checklist">
+                <li>List items with photos, category, condition</li>
+                <li>Say what you want — or “Open to offers”</li>
+                <li>Offer your own listings in return</li>
+                <li>Chat, report, save, edit listings</li>
+                <li>Install as home-screen app (PWA)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Surfaces</h3>
+              <ul class="checklist">
+                <li><b>Desktop browser</b> — full marketplace layout</li>
+                <li><b>Mobile browser</b> — app-style UI</li>
+                <li><b>Installed PWA</b> — standalone, offline toast, updates</li>
+                <li>Same codebase, same login, same data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 BUILT TODAY -->
+      <section class="slide" data-title="Built today">
+        <div class="slide-body">
+          <div class="eyebrow">Current status · July 2026</div>
+          <h1>What’s already live</h1>
+          <div class="grid g4" style="margin-bottom:16px;">
+            <div class="card stat"><div class="v">Auth</div><div class="l">Email signup, verify, profiles</div></div>
+            <div class="card stat"><div class="v">Listings</div><div class="l">CRUD, photos, categories, edit</div></div>
+            <div class="card stat"><div class="v">Trade</div><div class="l">Offers, chat, confirm flow</div></div>
+            <div class="card stat"><div class="v">PWA</div><div class="l">Install + desktop + mobile</div></div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <h3>Shipped capabilities</h3>
+              <ul>
+                <li>Home feed, search/filters, item detail + lightbox</li>
+                <li>Post / edit listing, My Listings, saved items</li>
+                <li>Messages (Realtime), Make Offer, Trade Summary</li>
+                <li>Reports, notifications shell, settings, privacy/terms</li>
+                <li>Pull-to-refresh, unread badges, city picker</li>
+                <li>Security hardening migration set (001–003)</li>
+              </ul>
+            </div>
+            <div class="card accent">
+              <h3>Live URL</h3>
+              <p style="font-size:18px; font-weight:700; margin:8px 0 12px;">
+                https://swaphub-web.vercel.app
+              </p>
+              <p class="small muted">
+                GitHub: <b>alpengerz/swaphub-web</b><br />
+                Hosting: Vercel production<br />
+                Backend: Supabase (Auth, Postgres, Storage, Realtime)
+              </p>
+              <p class="small" style="margin-top:12px;">
+                <span class="pill">Prototype → early beta</span>
+                <span class="pill amber" style="margin-left:6px;">Not store-published yet</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6 ARCHITECTURE -->
+      <section class="slide" data-title="Architecture">
+        <div class="slide-body">
+          <div class="eyebrow">Architecture</div>
+          <h1>System overview</h1>
+          <p class="lead">SPA talks directly to Supabase with the public anon key. <b>Postgres RLS is the security boundary</b> — there is no custom backend API yet.</p>
+          <div class="arch">
+            <div class="card">
+              <h3>Clients</h3>
+              <ul>
+                <li>Vite + React + TypeScript</li>
+                <li>Tailwind UI (mobile + desktop)</li>
+                <li>React Router app shell</li>
+                <li>vite-plugin-pwa (service worker)</li>
+              </ul>
+            </div>
+            <div class="arrow">→</div>
+            <div class="card accent">
+              <h3>Supabase platform</h3>
+              <ul>
+                <li><b>Auth</b> — email/password, confirm email</li>
+                <li><b>Postgres</b> — listings, offers, trades, chat</li>
+                <li><b>Storage</b> — listing photos, avatars</li>
+                <li><b>Realtime</b> — messages / conversations</li>
+                <li><b>RLS + triggers</b> — authorization & rate limits</li>
+              </ul>
+            </div>
+          </div>
+          <div class="grid g3" style="margin-top:14px;">
+            <div class="card"><h3>Hosting</h3><p class="small muted">Vercel CDN + SPA rewrites + security headers (CSP, frame deny)</p></div>
+            <div class="card"><h3>Email (needed)</h3><p class="small muted">Custom SMTP via Resend (or Brevo) — free Supabase SMTP ≈ 2/hr</p></div>
+            <div class="card"><h3>Domain (needed)</h3><p class="small muted">Own domain for branded mail + later custom URL</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 DATA MODEL -->
+      <section class="slide" data-title="Data model">
+        <div class="slide-body">
+          <div class="eyebrow">Data model</div>
+          <h1>Core entities</h1>
+          <div class="grid g3">
+            <div class="card">
+              <h3>Identity</h3>
+              <ul>
+                <li><code>profiles</code></li>
+                <li>username, city, bio, avatar</li>
+                <li>email_verified (auth-synced)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Marketplace</h3>
+              <ul>
+                <li><code>listings</code> + <code>listing_photos</code></li>
+                <li>status: active / reserved / traded / hidden</li>
+                <li>looking_for, category, condition</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Trade & trust</h3>
+              <ul>
+                <li><code>offers</code> → <code>trades</code></li>
+                <li><code>conversations</code> + <code>messages</code></li>
+                <li><code>reviews</code>, <code>reports</code></li>
+              </ul>
+            </div>
+          </div>
+          <div class="card" style="margin-top:14px;">
+            <h3>Key business rules (enforced in DB)</h3>
+            <div class="grid g2">
+              <ul>
+                <li>No offers on your own listing</li>
+                <li>Only listing owner can accept an offer</li>
+                <li>Offered items must be your active listings</li>
+                <li>Conversation seller must be listing owner</li>
+              </ul>
+              <ul>
+                <li>Reviews only after completed trade</li>
+                <li>Storage uploads scoped to <code>{userId}/…</code></li>
+                <li>Write rate limits (messages/offers/listings/reports)</li>
+                <li>Content length constraints</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 SECURITY -->
+      <section class="slide" data-title="Security">
+        <div class="slide-body">
+          <div class="eyebrow">Security posture</div>
+          <h1>Guardrails in place</h1>
+          <div class="grid g2">
+            <div class="card">
+              <h3>Already handled</h3>
+              <ul class="checklist done">
+                <li>RLS on all app tables</li>
+                <li>No service-role key in frontend</li>
+                <li>No raw SQL from client (PostgREST)</li>
+                <li>React XSS escaping (no dangerous HTML)</li>
+                <li>Seller-only accept + offer validation</li>
+                <li>Email verification gate in app</li>
+                <li>CSP / nosniff / frame deny on Vercel</li>
+                <li>PWA caches static assets only</li>
+              </ul>
+            </div>
+            <div class="card warn">
+              <h3>Still operational (you must do)</h3>
+              <ul>
+                <li>Run SQL migrations <b>002</b> + <b>003</b> on production Supabase</li>
+                <li>Connect <b>Resend SMTP</b> + raise email rate limits</li>
+                <li>Buy/verify a sending domain</li>
+                <li>Keep Confirm Email ON in Auth settings</li>
+                <li>Optional later: Cloudflare in front of custom domain</li>
+              </ul>
+              <p class="tiny" style="margin-top:10px;">DDoS: SPA alone can’t stop traffic floods — edge + Supabase limits + DB throttles are the layers.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9 TECH STACK -->
+      <section class="slide" data-title="Stack">
+        <div class="slide-body">
+          <div class="eyebrow">Technology</div>
+          <h1>Stack choices</h1>
+          <table>
+            <thead>
+              <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Frontend</td><td>Vite · React 18 · TypeScript · Tailwind</td><td>Fast iteration, typed, one UI for web + PWA</td></tr>
+              <tr><td>Backend</td><td>Supabase (BaaS)</td><td>Auth + DB + Storage + Realtime without ops team</td></tr>
+              <tr><td>Auth</td><td>Email/password + confirm</td><td>Simple; OAuth optional later</td></tr>
+              <tr><td>Hosting</td><td>Vercel</td><td>CDN, preview deploys, free hobby tier</td></tr>
+              <tr><td>Mobile reach</td><td>PWA first (Expo later)</td><td>Skip store friction until product-market fit</td></tr>
+              <tr><td>Email</td><td>Resend / Brevo SMTP</td><td>Escape 2 emails/hour free Supabase limit</td></tr>
+            </tbody>
+          </table>
+          <p class="small muted" style="margin-top:14px;">
+            Deliberately <b>no payments</b> in v1 — avoids escrow, PCI, and financial licensing complexity in PH.
+          </p>
+        </div>
+      </section>
+
+      <!-- 10 GAPS -->
+      <section class="slide" data-title="Gaps">
+        <div class="slide-body">
+          <div class="eyebrow">Production readiness</div>
+          <h1>What’s left before “real product”</h1>
+          <div class="grid g3">
+            <div class="card">
+              <h3>Must-have (P0)</h3>
+              <ul class="checklist todo">
+                <li>Apply migrations 002 + 003 in prod</li>
+                <li>Custom SMTP + domain</li>
+                <li>Custom domain on Vercel</li>
+                <li>Admin view for reports</li>
+                <li>Image upload hardening (bucket size/MIME)</li>
+                <li>Private beta invite list</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Should-have (P1)</h3>
+              <ul class="checklist todo">
+                <li>Pagination UI + infinite scroll</li>
+                <li>Push notifications (web push)</li>
+                <li>Post-trade review UI</li>
+                <li>Better search (full-text / ranking)</li>
+                <li>Moderation tools + block user</li>
+                <li>Analytics (Plausible/PostHog)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Later (P2)</h3>
+              <ul class="checklist todo">
+                <li>Expo native wrappers / store listing</li>
+                <li>Reputation scoring polish</li>
+                <li>Meetup safety features</li>
+                <li>Multi-city growth tooling</li>
+                <li>Edge Functions for heavy logic</li>
+                <li>AWS only if 50k–100k+ users</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 ROADMAP -->
+      <section class="slide" data-title="Roadmap">
+        <div class="slide-body">
+          <div class="eyebrow">Roadmap</div>
+          <h1>Path to production beta</h1>
+          <div class="timeline" style="margin-top:8px;">
+            <div class="card phase">
+              <div class="n">Phase 0 · Now</div>
+              <h3>Stabilize</h3>
+              <ul>
+                <li>Run SQL 002+003</li>
+                <li>Resend + domain</li>
+                <li>Smoke-test auth/trade</li>
+                <li>Fix critical bugs only</li>
+              </ul>
+              <p class="tiny">1–2 weeks</p>
+            </div>
+            <div class="card phase accent">
+              <div class="n">Phase 1</div>
+              <h3>Closed beta</h3>
+              <ul>
+                <li>~50–200 invited users</li>
+                <li>Admin reports queue</li>
+                <li>Feedback loop</li>
+                <li>Safety copy & Help</li>
+              </ul>
+              <p class="tiny">3–6 weeks</p>
+            </div>
+            <div class="card phase">
+              <div class="n">Phase 2</div>
+              <h3>Public soft launch</h3>
+              <ul>
+                <li>Custom domain</li>
+                <li>Analytics + SEO basics</li>
+                <li>Push / email alerts</li>
+                <li>City seed strategy</li>
+              </ul>
+              <p class="tiny">1–2 months</p>
+            </div>
+            <div class="card phase">
+              <div class="n">Phase 3</div>
+              <h3>Scale options</h3>
+              <ul>
+                <li>Expo store apps</li>
+                <li>Supabase Pro</li>
+                <li>Moderation hire/tools</li>
+                <li>Revisit AWS if needed</li>
+              </ul>
+              <p class="tiny">After PMF signals</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12 COST NOW -->
+      <section class="slide" data-title="Cost now">
+        <div class="slide-body">
+          <div class="eyebrow">Costings · current stack</div>
+          <h1>What it costs to run today</h1>
+          <p class="lead">Assuming free/hobby tiers and ~low hundreds of users. Domain + SMTP are the first real cash costs.</p>
+          <table>
+            <thead>
+              <tr><th>Item</th><th>Plan</th><th class="r">Monthly</th><th class="r">Yearly</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Vercel hosting</td><td>Hobby</td><td class="r">₱0</td><td class="r">₱0</td></tr>
+              <tr><td>Supabase</td><td>Free</td><td class="r">₱0</td><td class="r">₱0</td></tr>
+              <tr><td>Resend (or Brevo) email</td><td>Free tier</td><td class="r">₱0*</td><td class="r">₱0*</td></tr>
+              <tr><td>Domain</td><td>.com / .ph</td><td class="r">~₱80–150</td><td class="r">₱1,000–1,800</td></tr>
+              <tr><td>Apple / Google stores</td><td>Not yet</td><td class="r">₱0</td><td class="r">₱0</td></tr>
+              <tr class="total"><td colspan="2">Est. cash burn (pre-store)</td><td class="r">~₱100–200</td><td class="r">~₱1k–2k</td></tr>
+            </tbody>
+          </table>
+          <p class="tiny" style="margin-top:12px;">*Free SMTP tiers are generous for auth email; upgrade when transactional volume grows. Supabase free has project pauses/limits — move to Pro (~$25/mo ≈ ₱1.4k) before public launch if needed.</p>
+        </div>
+      </section>
+
+      <!-- 13 COST 1K -->
+      <section class="slide" data-title="Cost at 1k">
+        <div class="slide-body">
+          <div class="eyebrow">Costings · ~1,000 users</div>
+          <h1>Monthly infra (managed vs AWS)</h1>
+          <div class="grid g2">
+            <div class="card accent">
+              <h3>Recommended: managed</h3>
+              <table>
+                <thead><tr><th>Component</th><th class="r">Est.</th></tr></thead>
+                <tbody>
+                  <tr><td>Supabase Pro</td><td class="r">~₱1,400</td></tr>
+                  <tr><td>Vercel</td><td class="r">₱0–1,100</td></tr>
+                  <tr><td>Email / images / monitoring</td><td class="r">₱0–500</td></tr>
+                  <tr><td>Domain</td><td class="r">~₱100</td></tr>
+                  <tr class="total"><td>Total</td><td class="r">&lt; ₱2k–3k/mo</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card warn">
+              <h3>Self-hosted AWS (not recommended yet)</h3>
+              <table>
+                <thead><tr><th>Component</th><th class="r">Est.</th></tr></thead>
+                <tbody>
+                  <tr><td>Compute + RDS + ALB/NAT</td><td class="r">₱3.4k–8.6k</td></tr>
+                  <tr><td>Setup (one-time)</td><td class="r">₱80k–200k</td></tr>
+                  <tr><td>DevOps labour</td><td class="r">dominant</td></tr>
+                  <tr class="total"><td>5-yr infra+ops</td><td class="r">₱880k–3.1M</td></tr>
+                </tbody>
+              </table>
+              <p class="tiny">AWS only wins around ~50k–100k+ users or strict compliance needs.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14 BUILD COST -->
+      <section class="slide" data-title="Build cost">
+        <div class="slide-body">
+          <div class="eyebrow">Costings · finishing v1</div>
+          <h1>Remaining build effort</h1>
+          <p class="lead">UI + core flows already exist. Remaining work is production polish, admin, SMTP/domain, and beta ops — not a greenfield rebuild.</p>
+          <table>
+            <thead>
+              <tr><th>Option</th><th class="r">Cash cost</th><th>Timeline</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Founder-built (current path)</td><td class="r">~₱0–50k</td><td>4–8 weeks part-time</td><td>Domain, SMTP, polish, beta invites</td></tr>
+              <tr><td><b>You + 1 full-stack helper</b></td><td class="r">₱150k–400k</td><td>3–6 weeks</td><td>Admin, notifications, QA acceleration</td></tr>
+              <tr><td>Mini-agency finish package</td><td class="r">₱400k–800k</td><td>4–8 weeks</td><td>If outsourcing the last mile</td></tr>
+            </tbody>
+          </table>
+          <div class="grid g3" style="margin-top:14px;">
+            <div class="card stat"><div class="v">₱400k–1.0M</div><div class="l">Original greenfield early-app estimate</div></div>
+            <div class="card stat"><div class="v">↓ much less</div><div class="l">Because prototype + backend already exist</div></div>
+            <div class="card stat"><div class="v">2–3 mo</div><div class="l">Original beta timeline (now shorter)</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15 5 YEAR -->
+      <section class="slide" data-title="5-year">
+        <div class="slide-body">
+          <div class="eyebrow">Costings · 5-year ownership</div>
+          <h1>PWA-first vs native stores</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th class="r">Build</th>
+                <th class="r">Store+domain</th>
+                <th class="r">Infra</th>
+                <th class="r">Maintenance</th>
+                <th class="r">5-yr total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>PWA-first</b> (recommended now)</td>
+                <td class="r">₱0–400k</td>
+                <td class="r">₱5k</td>
+                <td class="r">₱90–180k</td>
+                <td class="r">low / founder</td>
+                <td class="r">₱100k–600k</td>
+              </tr>
+              <tr>
+                <td>Expo native + light retainer</td>
+                <td class="r">₱500k–1.2M</td>
+                <td class="r">₱35k</td>
+                <td class="r">₱90–180k</td>
+                <td class="r">₱0.9–1.8M</td>
+                <td class="r">₱1.5M–3.2M</td>
+              </tr>
+              <tr>
+                <td>Fully managed agency SLA</td>
+                <td class="r">₱800k–1.5M</td>
+                <td class="r">₱35k</td>
+                <td class="r">₱120–200k</td>
+                <td class="r">₱2.4–4.8M</td>
+                <td class="r">₱3.4M–6.5M</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="small muted" style="margin-top:12px;">
+            Native store apps force yearly OS/compliance maintenance even with zero features. PWA validates demand first; Expo can wrap the same product later.
+          </p>
+        </div>
+      </section>
+
+      <!-- 16 RISKS -->
+      <section class="slide" data-title="Risks">
+        <div class="slide-body">
+          <div class="eyebrow">Risks & mitigations</div>
+          <h1>What can go wrong</h1>
+          <table>
+            <thead><tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              <tr><td>Scams / unsafe meetups</td><td>Trust collapse</td><td>Safety tips, report flow, public meetups, later reputation</td></tr>
+              <tr><td>Spam listings / abuse</td><td>Cost + UX</td><td>DB rate limits, reports admin, optional phone verify later</td></tr>
+              <tr><td>Email deliverability</td><td>Signup friction</td><td>Custom SMTP + domain SPF/DKIM now</td></tr>
+              <tr><td>Cold start (no listings)</td><td>Empty marketplace</td><td>Seed one city, invite traders, founder-seeded listings</td></tr>
+              <tr><td>Brand collision (“SwapHub” used elsewhere)</td><td>Search/legal noise</td><td>Consider rename before hard marketing, or use get*.com</td></tr>
+              <tr><td>Free-tier limits</td><td>Outage / pause</td><td>Upgrade Supabase Pro before public push</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 17 RECOMMENDATION -->
+      <section class="slide dark" data-title="Recommendation">
+        <div class="slide-body">
+          <div class="eyebrow">Recommendation</div>
+          <h1>Ship the PWA beta. Don’t rebuild.</h1>
+          <div class="quote" style="margin:18px 0 22px; border-color:#6ee7a8;">
+            Keep the current architecture (Vercel + Supabase). Finish operational guardrails, invite a small city cohort, and only go native stores after retention is real.
+          </div>
+          <div class="grid g3">
+            <div class="card">
+              <h3>Do next week</h3>
+              <ul>
+                <li>Run SQL 003 in Supabase</li>
+                <li>Buy domain + Resend SMTP</li>
+                <li>Invite 20–50 testers</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Do this month</h3>
+              <ul>
+                <li>Reports admin page</li>
+                <li>Custom domain</li>
+                <li>Analytics + feedback form</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Defer</h3>
+              <ul>
+                <li>AWS rewrite</li>
+                <li>Payments / escrow</li>
+                <li>App Store until PMF</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 18 NEXT STEPS -->
+      <section class="slide" data-title="Next steps">
+        <div class="slide-body">
+          <div class="eyebrow">Ask</div>
+          <h1>Immediate next steps</h1>
+          <div class="grid g2">
+            <div class="card accent">
+              <h3>Technical checklist</h3>
+              <ol>
+                <li>Apply <code>002_guardrails.sql</code> + <code>003_security_guardrails.sql</code></li>
+                <li>Connect Resend SMTP in Supabase Auth</li>
+                <li>Verify sending domain DNS</li>
+                <li>Raise Auth email rate limit</li>
+                <li>Point custom domain to Vercel</li>
+              </ol>
+            </div>
+            <div class="card">
+              <h3>Business checklist</h3>
+              <ol>
+                <li>Pick launch city (e.g. Metro Manila)</li>
+                <li>Recruit first 50 traders with inventory</li>
+                <li>Decide brand/domain name final</li>
+                <li>Write short safety & community rules</li>
+                <li>Define success metrics for beta (WAU, trades/week)</li>
+              </ol>
+            </div>
+          </div>
+          <p class="small muted" style="margin-top:18px;">
+            Supporting docs in repo: <b>docs/SwapHub-Cost-Analysis.html</b> · <b>docs/SwapHub-Presentation.html</b> (this deck)
+          </p>
+        </div>
+      </section>
+
+      <!-- 19 CLOSING -->
+      <section class="slide cover" data-title="Close">
+        <div class="slide-body">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="#1b9a57" />
+              <path d="M11 12.5a5 5 0 0 1 8.5-2.2l1.2 1.2M21 12.5V8.8m0 3.7h-3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 19.5a5 5 0 0 1-8.5 2.2L11.3 20.5M11 19.5v3.7m0-3.7h3.7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Swap<span>Hub</span>
+          </div>
+          <div class="spacer"></div>
+          <h1>Thank you.</h1>
+          <p class="lead" style="color:rgba(255,255,255,0.78);">
+            Live demo: <b>https://swaphub-web.vercel.app</b><br />
+            Questions on architecture, cost, or beta plan welcome.
+          </p>
+          <p class="tiny" style="margin-top:40px; color:rgba(255,255,255,0.5);">
+            Press <span class="kbd">Esc</span> overview · <span class="kbd">F</span> fullscreen · <span class="kbd">←</span>/<span class="kbd">→</span> navigate
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <div class="progress" id="progress"></div>
+    <div class="footer-bar">
+      <div id="footerTitle">SwapHub presentation</div>
+      <div class="nav-btns">
+        <button type="button" id="prevBtn" aria-label="Previous">← Prev</button>
+        <span id="pageLabel">1 / 1</span>
+        <button type="button" id="nextBtn" aria-label="Next">Next →</button>
+      </div>
+    </div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      let i = 0;
+
+      function show(n) {
+        i = Math.max(0, Math.min(slides.length - 1, n));
+        slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+        document.getElementById("pageLabel").textContent = `${i + 1} / ${slides.length}`;
+        document.getElementById("footerTitle").textContent =
+          `SwapHub · ${slides[i].dataset.title || "Slide"}`;
+        document.getElementById("progress").style.width =
+          `${((i + 1) / slides.length) * 100}%`;
+        location.hash = String(i + 1);
+      }
+
+      document.getElementById("prevBtn").onclick = () => show(i - 1);
+      document.getElementById("nextBtn").onclick = () => show(i + 1);
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) {
+          e.preventDefault();
+          show(i + 1);
+        } else if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) {
+          e.preventDefault();
+          show(i - 1);
+        } else if (e.key === "Home") show(0);
+        else if (e.key === "End") show(slides.length - 1);
+        else if (e.key.toLowerCase() === "f") {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        }
+      });
+
+      const fromHash = parseInt(location.hash.replace("#", ""), 10);
+      show(Number.isFinite(fromHash) && fromHash > 0 ? fromHash - 1 : 0);
+    </script>
+  </body>
+</html>
